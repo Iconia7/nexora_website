@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Smartphone, Loader, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess }) {
+export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess, item, size }) {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("input"); // 'input' | 'success'
@@ -21,7 +21,9 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             phone: phone, 
-            amount: total 
+            amount: total,
+            item: item, // Ensure this object contains { name: "Hoodie..." }
+            size: size
         }) 
       });
       

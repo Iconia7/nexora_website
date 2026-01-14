@@ -7,18 +7,16 @@ export default async function handler(req, res) {
   const { checkoutRequestID } = req.body;
 
   // --- 1. CREDENTIALS ---
-  const consumerKey = "4I0cuGBM1KngCMP6zWAavhWOLI2LMatWA6axE2mp5cyoUKd9"; 
-  const consumerSecret = "xDAdv3KxtWiKHwm7UsGkB3OL0Xlv0A0jAOr07XNDHsMZkdKOIc0owkh2Gi5SodBL";
-  
-  // Sandbox defaults
-  const businessShortCode = "174379";
-  const passkey = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"; 
+  const consumerKey = process.env.MPESA_CONSUMER_KEY;
+  const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
+  const businessShortCode = process.env.MPESA_SHORTCODE;
+  const passkey = process.env.MPESA_PASSKEY; 
 
   try {
     // --- 2. GENERATE TOKEN ---
     const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
     const tokenResponse = await axios.get(
-      'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+      'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
       { headers: { Authorization: `Basic ${auth}` } }
     );
     const accessToken = tokenResponse.data.access_token;
@@ -31,7 +29,7 @@ export default async function handler(req, res) {
 
     // --- 4. QUERY SAFARICOM (THE FIX IS HERE) ---
     const queryResponse = await axios.post(
-      'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
+      'https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query',
       {
         BusinessShortCode: businessShortCode,
         Password: password,

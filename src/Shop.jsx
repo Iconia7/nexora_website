@@ -9,54 +9,108 @@ import SEO from './components/SEO';
 const MERCH = [
   {
     id: 1,
-    name: "Nexora 'Source Code' Hoodie",
+    name: "Nexora 'Source Code' Hoodie (White)",
     price: 2800, 
-    image: "/images/hoodie-mockup.png", 
+    image: "/images/White.png", 
     tag: "Heavyweight Cotton",
     shipsIn: "3-5 Days",
     sizes: ["M", "L", "XL", "XXL"]
   },
    {
-    id: 4, // Fixed ID
+    id: 2, // Fixed ID
     name: "Nexora 'Source Code' Hoodie (Black)",
     price: 2800, 
-    image: "/images/hoodie-mockup1.png", 
+    image: "/images/Black.png", 
     tag: "Heavyweight Cotton",
     shipsIn: "3-5 Days",
     sizes: ["M", "L", "XL", "XXL"]
   },
    {
-    id: 5, // Fixed ID
-    name: "Nexora 'Source Code' Hoodie (Gray)",
+    id: 3, // Fixed ID
+    name: "Nexora 'Source Code' Hoodie (Beige)",
     price: 2800, 
-    image: "/images/hoodie-mockup2.png", 
+    image: "/images/Beige.png", 
     tag: "Heavyweight Cotton",
     shipsIn: "3-5 Days",
     sizes: ["M", "L", "XL", "XXL"]
   },
   {
-    id: 2,
-    name: "Agency Sweatshirt (White/Maroon)",
+    id: 4, // Fixed ID
+    name: "Nexora 'Source Code' Hoodie (Burgundy)",
+    price: 2800, 
+    image: "/images/Burgundy.png", 
+    tag: "Heavyweight Cotton",
+    shipsIn: "3-5 Days",
+    sizes: ["M", "L", "XL", "XXL"]
+  },
+  {
+    id: 5,
+    name: "Agency Sweatshirt (Burgundy)",
     price: 2000,
-    image: "/images/sweatshirt-mockup.png",
+    image: "/images/Burgundy_sweat.png",
     tag: "Limited Drop",
     shipsIn: "3-5 Days",
     sizes: ["S", "M", "L", "XL"]
   },
   {
-    id: 3,
+    id: 6,
+    name: "Agency Sweatshirt (White)",
+    price: 2000,
+    image: "/images/White_sweat.png",
+    tag: "Limited Drop",
+    shipsIn: "3-5 Days",
+    sizes: ["S", "M", "L", "XL"]
+  },
+  {
+    id: 7,
+    name: "Agency Sweatshirt (Beige)",
+    price: 2000,
+    image: "/images/Beige_sweat.png",
+    tag: "Limited Drop",
+    shipsIn: "3-5 Days",
+    sizes: ["S", "M", "L", "XL"]
+  },
+  {
+    id: 8,
+    name: "Agency Sweatshirt (Black)",
+    price: 2000,
+    image: "/images/Black_sweat.png",
+    tag: "Limited Drop",
+    shipsIn: "3-5 Days",
+    sizes: ["S", "M", "L", "XL"]
+  },
+  {
+    id: 9,
     name: "Nexora Developer Tee (White)",
-    price: 700,
-    image: "/images/tee-mockup.png",
+    price: 750,
+    image: "/images/White_tee.png",
     tag: "Essential",
     shipsIn: "2 Days",
     sizes: ["S", "M", "L", "XL"]
   },
   {
-    id: 6, // Fixed ID
+    id: 10, // Fixed ID
     name: "Nexora Developer Tee (Black)",
-    price: 700,
-    image: "/images/tee-mockup1.png",
+    price: 750,
+    image: "/images/Black_tee.png",
+    tag: "Essential",
+    shipsIn: "2 Days",
+    sizes: ["S", "M", "L", "XL"]
+  },
+  {
+    id: 11, // Fixed ID
+    name: "Nexora Developer Tee (Beige)",
+    price: 750,
+    image: "/images/Beige_tee.png",
+    tag: "Essential",
+    shipsIn: "2 Days",
+    sizes: ["S", "M", "L", "XL"]
+  },
+  {
+    id: 12, // Fixed ID
+    name: "Nexora Developer Tee (Burgundy)",
+    price: 750,
+    image: "/images/Burgundy_tee.png",
     tag: "Essential",
     shipsIn: "2 Days",
     sizes: ["S", "M", "L", "XL"]
@@ -140,7 +194,7 @@ const ProductCard = ({ item, index, onBuy }) => {
           
           <div className="mt-4 text-center">
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
-                  <ShieldCheck size={12} /> Secured by PayHero
+                  <ShieldCheck size={12} /> Secured by Safaricom Daraja API
               </span>
           </div>
       </div>
@@ -153,16 +207,25 @@ const ReceiptView = ({ transaction, item, size, onBack }) => {
   const date = new Date().toLocaleString();
   const adminPhone = "254115332870"; 
 
-  const handleWhatsApp = () => {
-    const message = `🧾 *PAYMENT CONFIRMED* \n\n` +
-                    `Order Ref: ${transaction.receipt}\n` +
-                    `Item: ${item.name}\n` +
-                    `Size: ${size}\n` +
-                    `Amount: KES ${item.price}\n\n` +
-                    `Please ship to my location.`;
+const handleWhatsApp = () => {
+    // 1. Format the message clearly
+    const message = 
+`*NEXORA SHOP RECEIPT* ✅
+------------------
+*Order Ref:* ${transaction.receipt}
+*Item:* ${item.name}
+*Size:* ${size}
+*Amount:* KES ${item.price}
+*Date:* ${new Date().toLocaleString()}
+------------------
+*Payment Verified.* Please process my delivery to ...(add your location)`;
+
+    // 2. Encode and Open
+    // Ensure adminPhone is in format 254... without the +
+    const adminPhone = "254115332870"; 
     const url = `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
-  };
+};
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
@@ -306,7 +369,9 @@ export default function Shop({ onBack }) {
             <MpesaModal 
                 isOpen={isPaymentOpen} 
                 onClose={() => setIsPaymentOpen(false)}
-                total={buyingItem.price} 
+                total={buyingItem.price}
+                item={buyingItem}
+                size={buyingSize} 
                 onPaymentSuccess={(details) => {
                     setSuccessData({
                         details: details,
