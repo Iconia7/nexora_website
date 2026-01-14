@@ -39,7 +39,7 @@ const Pricing = () => {
       toast("Payment window closed.");
       setLoading(false);
   };
-  
+
   const PAYSTACK_PAGE_LINK = "https://paystack.shop/pay/o82xoyiulm";
   const PAYSTACK_PUBLIC_KEY = "pk_test_8285ec032df0e12139f9660034610da2c10c66d8"; // Replace with your key
 
@@ -203,6 +203,27 @@ const handleSelectPlan = (plan) => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleInvoice = (e) => {
+      e.preventDefault();
+
+      // 1. Validate Inputs
+      if (!formData.name || !formData.email || !formData.phone) {
+          toast.error("Please fill in your contact details first.");
+          return;
+      }
+
+      // 2. Validate Captcha (Optional for Invoice, but good for anti-spam)
+      const token = captchaRef.current.getValue();
+      if (!token) {
+         toast.error("Please verify that you are not a robot 🤖");
+         return;
+      }
+
+      // 3. Process
+      setLoading(true);
+      finalizeOrder("Pending Invoice", "N/A", "invoice");
   };
 
   const handleMpesaPay = async (e) => {
@@ -535,10 +556,15 @@ return (
                                 </button>
                             )}
                             {paymentMethod === 'invoice' && (
-                                <button type="button" onClick={(e) => {e.preventDefault(); finalizeOrder("Pending Invoice", "N/A", "invoice")}} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white bg-brand-charcoal hover:bg-brand-rose flex justify-center items-center gap-2">
-                                    Generate Invoice
-                                </button>
-                            )}
+    <button 
+        type="button" 
+        onClick={handleInvoice} // <--- CALL THE NEW FUNCTION
+        disabled={loading} 
+        className="w-full py-3 rounded-xl font-bold text-white bg-brand-charcoal hover:bg-brand-rose flex justify-center items-center gap-2"
+    >
+        {loading ? <Loader2 className="animate-spin"/> : "Generate Invoice"}
+    </button>
+)}
 
                         </form>
                     </div>
