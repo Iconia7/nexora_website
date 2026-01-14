@@ -93,7 +93,7 @@ const AdminPanel = () => {
           // B. Send Receipt Email
           const emailParams = {
               to_email: selectedOrder.customer.email,
-              from_name: "Nexora Billing",
+              from_name: "Nexora Creative Solutions Billing Team",
               subject: `Payment Received - ${selectedOrder.plan.plan}`,
               message_body: `Hi ${selectedOrder.customer.name},\n\n` +
                             `Great news! We have confirmed your payment of KES ${selectedOrder.amount}.\n\n` +
