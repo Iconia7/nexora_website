@@ -392,7 +392,7 @@ return (
       <section className="relative py-20 text-center text-white overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img src={picture} alt="Background" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-brand-charcoal/90"></div>
+          <div className="absolute inset-0 bg-brand-charcoal/55"></div>
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-black mb-4 font-creative">Transparent Pricing</h1>

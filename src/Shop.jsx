@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MpesaModal from './MpesaModal';
 import SEO from './components/SEO';
+import picture from '../assets/pattern.png';
 
 // --- INVENTORY DATA ---
 const MERCH = [
@@ -231,7 +232,10 @@ const handleWhatsApp = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative border border-gray-100">
         <div className="bg-brand-charcoal p-8 text-center relative overflow-hidden">
-           <div className="absolute inset-0 opacity-10" style={{backgroundImage: `url('/pattern.png')`}}></div>
+          <div className="absolute inset-0 z-0">
+                    <img src={picture} alt="Background" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-brand-charcoal/55"></div>
+                  </div>
           <div className="relative z-10">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-bounce">
                 <CheckCircle size={32} className="text-brand-rose" />
@@ -337,7 +341,10 @@ export default function Shop({ onBack }) {
 
       {/* Hero */}
       <div className="relative bg-brand-charcoal text-white py-20 overflow-hidden font-creative">
-         <div className="absolute inset-0 opacity-20" style={{backgroundImage: `url('/pattern.png')`, backgroundSize: '300px auto'}}></div>
+         <div className="absolute inset-0 z-0">
+                   <img src={picture} alt="Background" className="w-full h-full object-cover" />
+                   <div className="absolute inset-0 bg-brand-charcoal/55"></div>
+                 </div>
          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
