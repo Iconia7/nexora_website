@@ -13,6 +13,7 @@ import { useRef } from 'react';
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
+import { usePaystackPayment } from 'react-paystack';
 
 const Pricing = () => {
   // --- STATE MANAGEMENT ---
@@ -27,6 +28,42 @@ const Pricing = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', mpesaCode: '' });
   const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
 
+  // --- PAYSTACK CONFIGURATION ---
+  // Go to Paystack Dashboard > Settings > API Keys & Webhooks to get this
+    const onPaystackSuccess = (reference) => {
+      // reference object contains { message, reference, status, trans }
+      finalizeOrder("Paid via Card", reference.reference, "card");
+  };
+
+  const onPaystackClose = () => {
+      toast("Payment window closed.");
+      setLoading(false);
+  };
+  
+  const PAYSTACK_PAGE_LINK = "https://paystack.shop/pay/o82xoyiulm";
+  const PAYSTACK_PUBLIC_KEY = "pk_test_8285ec032df0e12139f9660034610da2c10c66d8"; // Replace with your key
+
+  const paystackConfig = {
+    reference: (new Date()).getTime().toString(),
+    email: formData.email,
+    // Paystack uses Kobo (Cents). So 100 KES = 10000. 
+    // We remove commas and multiply by 100.
+    amount: selectedPlan ? parseInt(selectedPlan.price.replace(/,/g, '')) * 100 : 0, 
+    publicKey: PAYSTACK_PUBLIC_KEY,
+    currency: "KES",
+  };
+
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  const handleCardPay = () => {
+      if (!formData.name || !formData.email || !formData.phone) {
+        toast.error("Please fill contact details first.");
+        return;
+      }
+      setLoading(true);
+      initializePayment(onPaystackSuccess, onPaystackClose);
+  };
+
   // Open Modal
 const handleSelectPlan = (plan) => {
     setSelectedPlan({ ...plan, category: activeCategory }); // Track which service they picked
@@ -34,51 +71,47 @@ const handleSelectPlan = (plan) => {
     setStatus('idle');
   };
 
-const generatePDF = (docType, paymentDetails) => {
+// --- PDF GENERATOR (Updated with International Instructions) ---
+  const generatePDF = (docType, paymentDetails) => {
     const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
     const isReceipt = docType === "Receipt";
     
-    // -- BRANDING HEADER --
-    // Navy Blue Background
-    doc.setFillColor(2, 2, 48); 
+    // 1. HEADER & BRANDING
+    doc.setFillColor(2, 2, 48); // Navy
     doc.rect(0, 0, 210, 40, 'F');
     
-    // Logo Text / Image
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("NEXORA CREATIVE SOLUTIONS", 20, 25);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Thika, Kiambu | info@nexoracreatives.co.ke | +254115332870", 20, 35);
+    doc.text("Thika, Kiambu | info@nexoracreatives.co.ke | +254 115 332 870", 20, 35);
 
-    // -- DOCUMENT TYPE & STATUS --
+    // 2. INVOICE STATUS
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text(isReceipt ? "OFFICIAL RECEIPT" : "PROFORMA INVOICE", 140, 60);
     
-    // "PAID" Stamp or "UNPAID" Status
     if (isReceipt) {
         doc.setTextColor(34, 197, 94); // Green
         doc.setFontSize(14);
         doc.text("STATUS: PAID", 140, 70);
-        doc.setTextColor(0, 0, 0); // Reset
     } else {
         doc.setTextColor(220, 38, 38); // Red
         doc.setFontSize(14);
-        doc.text("STATUS: PENDING", 140, 70);
-        doc.setTextColor(0, 0, 0);
+        doc.text("STATUS: UNPAID", 140, 70);
     }
 
-    // -- METADATA --
+    // 3. DETAILS
+    doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`Date: ${date}`, 140, 80);
     doc.text(`Ref: ${paymentDetails.ref}`, 140, 85);
     
-    // Client Details
     doc.setFont("helvetica", "bold");
     doc.text("Bill To:", 20, 60);
     doc.setFont("helvetica", "normal");
@@ -86,8 +119,7 @@ const generatePDF = (docType, paymentDetails) => {
     doc.text(formData.email, 20, 70);
     doc.text(formData.phone, 20, 75);
 
-    // -- TABLE --
-    // Header
+    // 4. TABLE LINE ITEMS
     doc.setDrawColor(200, 200, 200);
     doc.line(20, 95, 190, 95);
     doc.setFont("helvetica", "bold");
@@ -95,41 +127,73 @@ const generatePDF = (docType, paymentDetails) => {
     doc.text("Amount (KES)", 160, 102);
     doc.line(20, 105, 190, 105);
 
-    // Item
     doc.setFont("helvetica", "normal");
     doc.text(`${selectedPlan.plan} (${selectedPlan.category})`, 20, 115);
     doc.text(selectedPlan.price, 160, 115);
     
-    // Extra M-Pesa Info for Receipts
+    // Receipt Specifics
     if(isReceipt) {
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
-        doc.text(`Paid via M-Pesa. Code: ${paymentDetails.mpesaCode}`, 20, 122);
+        doc.text(`Paid via: ${paymentDetails.method === 'card' ? 'Visa/Mastercard' : 'M-Pesa'}`, 20, 122);
+        doc.text(`Transaction ID: ${paymentDetails.mpesaCode}`, 20, 127);
         doc.setTextColor(0, 0, 0);
     }
 
-    // -- TOTALS --
-    doc.line(20, 130, 190, 130);
+    // 5. TOTALS
+    doc.line(20, 135, 190, 135);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("Total Total:", 120, 140);
-    doc.setTextColor(2, 2, 48); // Navy
-    doc.text(`KES ${selectedPlan.price}`, 160, 140);
+    doc.text("Total Amount:", 120, 145);
+    doc.setTextColor(2, 2, 48); 
+    doc.text(`KES ${selectedPlan.price}`, 160, 145);
 
-    // -- FOOTER --
+    // 6. PAYMENT FOOTER (THE IMPORTANT PART)
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text("Thank you for doing business with us.", 20, 160);
+    doc.text("Thank you for your business.", 20, 160);
     
     if (!isReceipt) {
+         doc.setDrawColor(0, 0, 0);
+         doc.line(20, 165, 190, 165); // Separator line
+         
          doc.setFontSize(9);
+         doc.setFont("helvetica", "bold");
          doc.text("PAYMENT INSTRUCTIONS:", 20, 175);
-         doc.text("Paybill: 4041463", 20, 180);
-         doc.text(`Account: ${selectedPlan.plan.substring(0,10)}`, 20, 185);
+         
+         // --- LEFT COLUMN: LOCAL (KENYA) ---
+         doc.text("KENYA CLIENTS (M-Pesa)", 20, 182);
+         doc.setFont("helvetica", "normal");
+         doc.text("Paybill: 4041463", 20, 187);
+         // Dynamic Account Name (First 15 chars)
+         doc.text(`Account: ${selectedPlan.plan.substring(0, 15).toUpperCase()}`, 20, 192);
+
+         // --- RIGHT COLUMN: INTERNATIONAL ---
+         doc.setFont("helvetica", "bold");
+         doc.text("INTERNATIONAL CLIENTS", 110, 182);
+         doc.setFont("helvetica", "normal");
+         
+         // Option A: Bank Transfer (Replace with your actual Equity details later)
+         doc.text("Bank: Equity Bank Kenya", 110, 187);
+         doc.text("Account: 0340183028114", 110, 192);
+         doc.text("Swift Code: EQBLKENA", 110, 197); // Standard Equity Swift
+         
+         // Option B: Online Card
+         doc.setFont("helvetica", "bold");
+         doc.text("Option 2: Visa/Card (International)", 110, 182);
+         doc.setFont("helvetica", "normal");
+         doc.text("Pay securely via our payment page:", 110, 187);
+         
+         // WRITE THE ACTUAL LINK ON THE PDF
+         doc.setTextColor(0, 0, 255); // Make it blue
+         doc.text(PAYSTACK_PAGE_LINK, 110, 192);
+         doc.setTextColor(0, 0, 0); // Reset color
+         
+         doc.text("(Or click the link sent to your email)", 110, 197);
     }
 
     return doc;
-};
+  };
 
   // Close Modal
   const closeModal = () => {
@@ -225,17 +289,18 @@ const generatePDF = (docType, paymentDetails) => {
     }, 3000);
   };
 
-const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
+const finalizeOrder = async (paymentStatus, receiptRef = "N/A", methodUsed = "mpesa") => {
       try {
         // 1. Generate PDF (Data URI)
-        const isMpesa = paymentMethod === 'mpesa';
-        const docType = isMpesa ? "Receipt" : "Invoice";
-        const refNumber = isMpesa ? receiptRef : `INV-${Math.floor(Math.random() * 10000)}`;
+        const isPaid = paymentStatus.includes("Paid");
+        const docType = isPaid ? "Receipt" : "Invoice";
+        const refNumber = isPaid ? receiptRef : `INV-${Math.floor(Math.random() * 10000)}`;
 
         // 1. Generate PDF
         const pdfDoc = generatePDF(docType, { 
             ref: refNumber, 
-            mpesaCode: receiptRef 
+            mpesaCode: receiptRef,
+            method: methodUsed
         });
 
         // 2. Auto-Download for User
@@ -244,7 +309,7 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
         await addDoc(collection(db, "orders"), {
             customer: formData,
             plan: selectedPlan,
-            method: paymentMethod,
+            method: methodUsed,
             amount: selectedPlan.price,
             status: paymentStatus,
             mpesaReceipt: receiptRef,
@@ -253,10 +318,20 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
 
         // 3. Prepare Email
 
-        const emailSubject = isMpesa ? "Payment Receipt" : "Invoice Generated";
-        const emailMessage = isMpesa 
-            ? `We confirm receipt of KES ${selectedPlan.price} via M-Pesa (${receiptRef}). Your official receipt has been downloaded.`
-            : `Please find your invoice details. Paybill: 4041463, Account: ${selectedPlan.plan}. Please download the invoice generated.`;
+        let emailMessage = "";
+        
+        if (isPaid) {
+            emailMessage = `Payment Confirmed via ${methodUsed}.\nRef: ${receiptRef}.\n\nYour official receipt has been downloaded.`;
+        } else {
+            emailMessage = `Hi ${formData.name},\n\n` +
+            `Here is your invoice for the ${selectedPlan.plan}.\n\n` +
+            `AMOUNT DUE: KES ${selectedPlan.price}\n\n` +
+            `--- HOW TO PAY ---\n` +
+            `OPTION 1 (M-PESA): Paybill 4041463, Account: ${selectedPlan.plan}\n\n` +
+            `OPTION 2 (CARD/INTERNATIONAL): Click here to pay securely:\n` +
+            `${PAYSTACK_PAGE_LINK}\n\n` + // <--- LINK ADDED HERE
+            `Please make payment within 24 hours to begin the project.`;
+        }
 
         const clientParams = {
             to_email: formData.email,
@@ -288,6 +363,8 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
           setLoading(false);
       }
   };
+
+
 
 return (
     <div className="pt-20 bg-gray-50 min-h-screen">
@@ -397,165 +474,78 @@ return (
       {/* 3. CHECKOUT MODAL */}
       <AnimatePresence>
         {isModalOpen && selectedPlan && (
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-charcoal/80 backdrop-blur-sm"
-            >
-                <motion.div 
-                    initial={{ scale: 0.9, y: 20 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.9, y: 20 }}
-                    className="bg-white rounded-3xl w-full max-w-2xl relative shadow-2xl overflow-hidden flex flex-col md:flex-row"
-                >
-                    {/* Close Button */}
-                    <button onClick={closeModal} className="absolute top-4 right-4 z-20 text-gray-400 hover:text-brand-rose bg-white rounded-full p-1">
-                        <X size={24} />
-                    </button>
+            <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-charcoal/80 backdrop-blur-sm">
+                <motion.div className="bg-white rounded-3xl w-full max-w-2xl relative shadow-2xl overflow-hidden flex flex-col md:flex-row">
+                    <button onClick={closeModal} className="absolute top-4 right-4 z-20 text-gray-400 hover:text-brand-rose bg-white rounded-full p-1"><X size={24} /></button>
 
-                    {/* Left Side: Order Summary */}
+                    {/* Left Side */}
                     <div className="bg-brand-charcoal text-white p-8 md:w-2/5 flex flex-col justify-between">
-                        <div>
-                            <h3 className="text-gray-400 uppercase text-xs font-bold tracking-wider mb-2">Order Summary</h3>
-                            <div>
-                                 <p className="text-xs text-gray-400 mb-1">{selectedPlan.category}</p>
-             <h2 className="text-3xl font-bold mb-1">{selectedPlan.plan}</h2>
-          </div>
-                            <p className="text-brand-rose text-lg font-bold">KES {selectedPlan.price} <span className="text-xs text-gray-400 font-normal">/project</span></p>
-                        </div>
-                        <div className="mt-8 space-y-3">
-                            {selectedPlan.features.slice(0, 3).map((feat, i) => (
-                                <div key={i} className="flex gap-2 text-sm text-gray-300">
-                                    <Check size={16} className="text-brand-rose shrink-0"/> {feat}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="mt-8 pt-6 border-t border-gray-700">
-                            <p className="text-xs text-gray-500">Total Due Today</p>
+                         <div>
+                            <p className="text-xs text-gray-400 mb-1">{selectedPlan.category}</p>
+                            <h2 className="text-3xl font-bold mb-1">{selectedPlan.plan}</h2>
+                            <p className="text-brand-rose text-lg font-bold">KES {selectedPlan.price}</p>
+                         </div>
+                         <div className="mt-8 pt-6 border-t border-gray-700">
+                            <p className="text-xs text-gray-500">Total Due</p>
                             <p className="text-2xl font-bold">KES {selectedPlan.price}</p>
                         </div>
                     </div>
 
-                    {/* Right Side: Payment Form */}
+                    {/* Right Side */}
                     <div className="p-8 md:w-3/5 bg-gray-50">
-        <h3 className="text-xl font-bold text-brand-charcoal mb-6">Secure Checkout</h3>
-        
-        <form className="space-y-4"> {/* Removed onSubmit here, buttons handle it */}
-            
-            {/* Contact Inputs */}
-            <div className="space-y-3">
-                <input 
-                    type="text" name="name" placeholder="Full Name" required 
-                    value={formData.name} onChange={handleChange}
-                    className="w-full p-3 rounded-lg border border-gray-200 text-sm"
-                />
-                <input 
-                    type="email" name="email" placeholder="Email Address" required 
-                    value={formData.email} onChange={handleChange}
-                    className="w-full p-3 rounded-lg border border-gray-200 text-sm"
-                />
-                <input 
-                    type="tel" name="phone" placeholder="M-Pesa Number (07...)" required 
-                    value={formData.phone} onChange={handleChange}
-                    className="w-full p-3 rounded-lg border border-gray-200 text-sm"
-                />
-            </div>
+                        <h3 className="text-xl font-bold text-brand-charcoal mb-6">Secure Checkout</h3>
+                        <form className="space-y-4">
+                            <div className="space-y-3">
+                                <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-lg border border-gray-200 text-sm"/>
+                                <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-lg border border-gray-200 text-sm"/>
+                                <input type="tel" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="w-full p-3 rounded-lg border border-gray-200 text-sm"/>
+                            </div>
 
-            {/* Payment Method Selector */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
-                <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('mpesa')}
-                    // DISABLE M-PESA IF PRICE IS CUSTOM
-    disabled={selectedPlan.price === "Custom"} 
-    className={`p-3 rounded-lg border flex flex-col items-center gap-1 text-xs font-bold transition 
-    ${selectedPlan.price === "Custom" ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''} 
-    ${paymentMethod === 'mpesa' && selectedPlan.price !== "Custom" ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-500'}`}
-                >
-                    <Smartphone size={20}/> Pay Now (M-Pesa)
-                </button>
-                <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('invoice')}
-                    className={`p-3 rounded-lg border flex flex-col items-center gap-1 text-xs font-bold transition ${paymentMethod === 'invoice' ? 'border-brand-rose bg-red-50 text-brand-rose' : 'border-gray-200 text-gray-500'}`}
-                >
-                    <FileText size={20}/> Pay Later (Invoice)
-                </button>
-            </div>
+                            {/* 3 PAYMENT BUTTONS */}
+                            <div className="grid grid-cols-3 gap-2 mt-4">
+                                <button type="button" onClick={() => setPaymentMethod('mpesa')} className={`p-2 rounded-lg border flex flex-col items-center gap-1 text-[10px] font-bold ${paymentMethod === 'mpesa' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-200 text-gray-500'}`}>
+                                    <Smartphone size={16}/> M-Pesa
+                                </button>
+                                <button type="button" onClick={() => setPaymentMethod('card')} className={`p-2 rounded-lg border flex flex-col items-center gap-1 text-[10px] font-bold ${paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500'}`}>
+                                    <CreditCard size={16}/> Card
+                                </button>
+                                <button type="button" onClick={() => setPaymentMethod('invoice')} className={`p-2 rounded-lg border flex flex-col items-center gap-1 text-[10px] font-bold ${paymentMethod === 'invoice' ? 'border-brand-rose bg-red-50 text-brand-rose' : 'border-gray-200 text-gray-500'}`}>
+                                    <FileText size={16}/> Invoice
+                                </button>
+                            </div>
 
-            {/* Dynamic Payment Content */}
-            <div className="mt-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                {paymentMethod === 'mpesa' ? (
-                    <div className="text-center space-y-2">
-                         <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 text-green-600 animate-pulse">
-                            <Smartphone size={24} />
-                         </div>
-                         <p className="text-sm font-bold text-brand-charcoal">Automatic Payment</p>
-                         <p className="text-xs text-gray-500">
-                             We will send an M-Pesa prompt to <b>{formData.phone || "your phone"}</b>. 
-                             <br/>Enter your PIN to complete the order instantly.
-                         </p>
+                            {/* DYNAMIC CONTENT */}
+                            <div className="mt-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                {paymentMethod === 'mpesa' && <p className="text-xs text-center text-gray-500">M-Pesa prompt will be sent to your phone.</p>}
+                                {paymentMethod === 'invoice' && <p className="text-xs text-center text-gray-500">Invoice will be sent to your email.</p>}
+                                {paymentMethod === 'card' && <p className="text-xs text-center text-gray-500">Secure Visa/Mastercard payment via Paystack.</p>}
+                            </div>
+
+                            <div className="flex justify-center mb-4"><ReCAPTCHA ref={captchaRef} sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN" /></div>
+
+                            {/* ACTION BUTTON */}
+                            {paymentMethod === 'mpesa' && (
+                                <button type="button" onClick={handleMpesaPay} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 flex justify-center items-center gap-2">
+                                    {loading ? <Loader2 className="animate-spin"/> : "Pay with M-Pesa"}
+                                </button>
+                            )}
+                            {paymentMethod === 'card' && (
+                                <button type="button" onClick={handleCardPay} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 flex justify-center items-center gap-2">
+                                    {loading ? <Loader2 className="animate-spin"/> : "Pay with Card"}
+                                </button>
+                            )}
+                            {paymentMethod === 'invoice' && (
+                                <button type="button" onClick={(e) => {e.preventDefault(); finalizeOrder("Pending Invoice", "N/A", "invoice")}} disabled={loading} className="w-full py-3 rounded-xl font-bold text-white bg-brand-charcoal hover:bg-brand-rose flex justify-center items-center gap-2">
+                                    Generate Invoice
+                                </button>
+                            )}
+
+                        </form>
                     </div>
-                ) : (
-                    <div className="space-y-3 text-center">
-                         <p className="text-xs text-gray-500 font-bold uppercase">Manual Payment Details</p>
-                         <div className="bg-gray-50 p-3 rounded-lg border border-dashed border-gray-300">
-                             <p className="text-xs text-gray-500">Paybill</p>
-                             <p className="text-xl font-black text-brand-charcoal tracking-widest">4041463</p>
-                             
-                             <p className="text-xs text-gray-500 mt-2">Account No.</p>
-                             {/* Account No is automatically the Plan Name */}
-                             <p className="text-sm font-bold text-brand-rose uppercase">
-                                 {selectedPlan.plan.replace(/\s/g, '').substring(0, 10) || "NEXORA"}
-                             </p>
-                         </div>
-                         <p className="text-[10px] text-gray-400">
-                             Click 'Generate Invoice' to receive this via email.
-                         </p>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex justify-center mb-4">
-                <ReCAPTCHA
-                    ref={captchaRef}
-                    sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
-                />
-            </div>
-
-            {/* Action Buttons */}
-            {paymentMethod === 'mpesa' ? (
-                 <button 
-                    type="button" // Important: Button type button to prevent form submit
-                    onClick={handleMpesaPay}
-                    disabled={loading || status === 'success'}
-                    className={`w-full py-4 rounded-xl font-bold text-white transition flex items-center justify-center gap-2 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200'}`}
-                 >
-                    {loading ? <Loader2 className="animate-spin"/> : <><Smartphone size={18}/> Pay KES {selectedPlan.price}</>}
-                 </button>
-            ) : (
-                 <button 
-                    type="button" 
-                    onClick={(e) => { e.preventDefault(); finalizeOrder("Pending Invoice"); }}
-                    disabled={loading || status === 'success'}
-                    className="w-full py-4 rounded-xl font-bold bg-brand-charcoal text-white hover:bg-brand-rose transition shadow-lg flex items-center justify-center gap-2"
-                 >
-                    {status === 'success' ? <CheckCircle/> : <><FileText size={18}/> Generate Invoice</>}
-                 </button>
-            )}
-            
-            <p className="text-[10px] text-center text-gray-400 mt-2">
-                Secured by Safaricom & Nexora Creative Solutions
-            </p>
-
-        </form>
-    </div>
                 </motion.div>
             </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };
