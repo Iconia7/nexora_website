@@ -9,6 +9,7 @@ import CookieBanner from './components/CookieBanner';
 import WhatsAppButton from './components/WhatsAppButton';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import { Toaster } from 'react-hot-toast';
+import AdminPanel from './pages/AdminPanel';
 
 // --- LAZY IMPORTS ---
 const Home = lazy(() => import('./pages/Home'));
@@ -28,6 +29,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const ComingSoon = lazy(() => import('./pages/ComingSoon'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+
 
 // --- NEW SHOP IMPORT ---
 // Ensure your Shop.jsx file is in the 'src' folder, or move it to 'pages' and update this path to './pages/Shop'
@@ -73,6 +75,7 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/team" element={<Team />} />
               <Route path="/team/:id" element={<TeamDetails />} />
+              <Route path="/admin" element={<AdminPanel />} />
 
               {/* --- 3. THE SHOP ROUTE --- */}
               <Route path="/shop" element={<ShopWrapper />} />
