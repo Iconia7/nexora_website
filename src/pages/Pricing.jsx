@@ -72,7 +72,8 @@ const handleSelectPlan = (plan) => {
   };
 
 // --- PDF GENERATOR (Updated with International Instructions) ---
-  const generatePDF = (docType, paymentDetails) => {
+// --- PDF GENERATOR (Fixed Layout) ---
+const generatePDF = (docType, paymentDetails) => {
     const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
     const isReceipt = docType === "Receipt";
@@ -131,7 +132,6 @@ const handleSelectPlan = (plan) => {
     doc.text(`${selectedPlan.plan} (${selectedPlan.category})`, 20, 115);
     doc.text(selectedPlan.price, 160, 115);
     
-    // Receipt Specifics
     if(isReceipt) {
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
@@ -148,7 +148,7 @@ const handleSelectPlan = (plan) => {
     doc.setTextColor(2, 2, 48); 
     doc.text(`KES ${selectedPlan.price}`, 160, 145);
 
-    // 6. PAYMENT FOOTER (THE IMPORTANT PART)
+    // 6. PAYMENT FOOTER (FIXED LAYOUT)
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text("Thank you for your business.", 20, 160);
@@ -162,38 +162,34 @@ const handleSelectPlan = (plan) => {
          doc.text("PAYMENT INSTRUCTIONS:", 20, 175);
          
          // --- LEFT COLUMN: LOCAL (KENYA) ---
-         doc.text("KENYA CLIENTS (M-Pesa)", 20, 182);
+         doc.setFont("helvetica", "bold");
+         doc.text("KENYA (M-PESA)", 20, 182);
          doc.setFont("helvetica", "normal");
-         doc.text("Paybill: 4041463", 20, 187);
-         // Dynamic Account Name (First 15 chars)
-         doc.text(`Account: ${selectedPlan.plan.substring(0, 15).toUpperCase()}`, 20, 192);
+         doc.text("Paybill: 4041463", 20, 188);
+         doc.text(`Account: ${selectedPlan.plan.substring(0, 12).toUpperCase()}`, 20, 194);
 
          // --- RIGHT COLUMN: INTERNATIONAL ---
+         // 1. Bank Details
          doc.setFont("helvetica", "bold");
-         doc.text("INTERNATIONAL CLIENTS", 110, 182);
+         doc.text("INTERNATIONAL (BANK)", 110, 182);
+         doc.setFont("helvetica", "normal");
+         doc.text("Bank: Equity Bank Kenya", 110, 188);
+         doc.text("Acc: 0340183028114", 110, 194);
+         doc.text("Swift: EQBLKENA", 110, 200);
+         
+         // 2. Card Link (Moved down to avoid overlap)
+         doc.setFont("helvetica", "bold");
+         doc.text("OR PAY ONLINE (CARD):", 110, 210);
          doc.setFont("helvetica", "normal");
          
-         // Option A: Bank Transfer (Replace with your actual Equity details later)
-         doc.text("Bank: Equity Bank Kenya", 110, 187);
-         doc.text("Account: 0340183028114", 110, 192);
-         doc.text("Swift Code: EQBLKENA", 110, 197); // Standard Equity Swift
-         
-         // Option B: Online Card
-         doc.setFont("helvetica", "bold");
-         doc.text("Option 2: Visa/Card (International)", 110, 182);
-         doc.setFont("helvetica", "normal");
-         doc.text("Pay securely via our payment page:", 110, 187);
-         
-         // WRITE THE ACTUAL LINK ON THE PDF
-         doc.setTextColor(0, 0, 255); // Make it blue
-         doc.text(PAYSTACK_PAGE_LINK, 110, 192);
+         // Make the link blue
+         doc.setTextColor(0, 0, 255); 
+         doc.text(PAYSTACK_PAGE_LINK, 110, 216);
          doc.setTextColor(0, 0, 0); // Reset color
-         
-         doc.text("(Or click the link sent to your email)", 110, 197);
     }
 
     return doc;
-  };
+};
 
   // Close Modal
   const closeModal = () => {
