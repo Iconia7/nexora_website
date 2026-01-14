@@ -145,7 +145,7 @@ const AdminPanel = () => {
   // --- DASHBOARD UI ---
   return (
     // 👇 CHANGED: 'pt-24' -> 'pt-32' (Extra safe space for tall navbars)
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-32 font-sans text-gray-800">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-50 font-sans text-gray-800">
       <div className="max-w-7xl mx-auto">
         
         {/* Header */}
