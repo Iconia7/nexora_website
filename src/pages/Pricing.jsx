@@ -12,6 +12,7 @@ import SEO from '../components/SEO';
 import { useRef } from 'react';
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
 
 const Pricing = () => {
   // --- STATE MANAGEMENT ---
@@ -32,6 +33,103 @@ const handleSelectPlan = (plan) => {
     setIsModalOpen(true);
     setStatus('idle');
   };
+
+const generatePDF = (docType, paymentDetails) => {
+    const doc = new jsPDF();
+    const date = new Date().toLocaleDateString();
+    const isReceipt = docType === "Receipt";
+    
+    // -- BRANDING HEADER --
+    // Navy Blue Background
+    doc.setFillColor(2, 2, 48); 
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    // Logo Text / Image
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("NEXORA CREATIVE SOLUTIONS", 20, 25);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Thika, Kiambu | info@nexoracreatives.co.ke | +254115332870", 20, 35);
+
+    // -- DOCUMENT TYPE & STATUS --
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(isReceipt ? "OFFICIAL RECEIPT" : "PROFORMA INVOICE", 140, 60);
+    
+    // "PAID" Stamp or "UNPAID" Status
+    if (isReceipt) {
+        doc.setTextColor(34, 197, 94); // Green
+        doc.setFontSize(14);
+        doc.text("STATUS: PAID", 140, 70);
+        doc.setTextColor(0, 0, 0); // Reset
+    } else {
+        doc.setTextColor(220, 38, 38); // Red
+        doc.setFontSize(14);
+        doc.text("STATUS: PENDING", 140, 70);
+        doc.setTextColor(0, 0, 0);
+    }
+
+    // -- METADATA --
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${date}`, 140, 80);
+    doc.text(`Ref: ${paymentDetails.ref}`, 140, 85);
+    
+    // Client Details
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill To:", 20, 60);
+    doc.setFont("helvetica", "normal");
+    doc.text(formData.name.toUpperCase(), 20, 65);
+    doc.text(formData.email, 20, 70);
+    doc.text(formData.phone, 20, 75);
+
+    // -- TABLE --
+    // Header
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 95, 190, 95);
+    doc.setFont("helvetica", "bold");
+    doc.text("Service Description", 20, 102);
+    doc.text("Amount (KES)", 160, 102);
+    doc.line(20, 105, 190, 105);
+
+    // Item
+    doc.setFont("helvetica", "normal");
+    doc.text(`${selectedPlan.plan} (${selectedPlan.category})`, 20, 115);
+    doc.text(selectedPlan.price, 160, 115);
+    
+    // Extra M-Pesa Info for Receipts
+    if(isReceipt) {
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Paid via M-Pesa. Code: ${paymentDetails.mpesaCode}`, 20, 122);
+        doc.setTextColor(0, 0, 0);
+    }
+
+    // -- TOTALS --
+    doc.line(20, 130, 190, 130);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Total:", 120, 140);
+    doc.setTextColor(2, 2, 48); // Navy
+    doc.text(`KES ${selectedPlan.price}`, 160, 140);
+
+    // -- FOOTER --
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Thank you for doing business with us.", 20, 160);
+    
+    if (!isReceipt) {
+         doc.setFontSize(9);
+         doc.text("PAYMENT INSTRUCTIONS:", 20, 175);
+         doc.text("Paybill: 4041463", 20, 180);
+         doc.text(`Account: ${selectedPlan.plan.substring(0,10)}`, 20, 185);
+    }
+
+    return doc;
+};
 
   // Close Modal
   const closeModal = () => {
@@ -67,6 +165,7 @@ const handleSelectPlan = (plan) => {
 
     setLoading(true);
     const cleanPrice = parseInt(selectedPlan.price.replace(/,/g, ''));
+    const accountRefName = selectedPlan.plan.substring(0, 12);
 
     try {
         // 3. Trigger STK Push
@@ -75,7 +174,8 @@ const handleSelectPlan = (plan) => {
             phone: formData.phone,
             amount: cleanPrice,
             item: { name: selectedPlan.plan }, // Pass the Plan Name as the item
-            size: selectedPlan.period // Pass period (e.g. "One-off") as extra info
+            size: selectedPlan.period,
+            accountRef: accountRefName
         });
 
         if (res.data.ResponseCode === "0") {
@@ -125,80 +225,66 @@ const handleSelectPlan = (plan) => {
     }, 3000);
   };
 
-  const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
+const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
       try {
-        // 1. Save to Firebase
+        // 1. Generate PDF (Data URI)
+        const isMpesa = paymentMethod === 'mpesa';
+        const docType = isMpesa ? "Receipt" : "Invoice";
+        const refNumber = isMpesa ? mpesaRef : `INV-${Math.floor(Math.random() * 10000)}`;
+
+        // 1. Generate PDF
+        const pdfDoc = generatePDF(docType, { 
+            ref: refNumber, 
+            mpesaCode: mpesaRef 
+        });
+
+        // 2. Auto-Download for User
+        pdfDoc.save(`Nexora_${docType}_${selectedPlan.plan.replace(/\s/g, '_')}.pdf`);
+        // 2. Save to Firebase
         await addDoc(collection(db, "orders"), {
             customer: formData,
             plan: selectedPlan,
             method: paymentMethod,
-            amount: selectedPlan.price, // Store the real price string
-            status: paymentStatus, // "Paid" or "Pending Invoice"
+            amount: selectedPlan.price,
+            status: paymentStatus,
             mpesaReceipt: receiptRef,
             timestamp: serverTimestamp()
         });
 
-        // 2. Send Emails (Your existing email logic)
-        // ... (Paste your existing emailjs code here) ...
-        // 3. Prepare Email Content
-        const serviceID = "service_nhwsclu"; 
-        const templateID = "template_61eywtf"; 
-        const publicKey = "ctUKvg88_0Th5sfKn";
+        // 3. Prepare Email
 
-        // Admin Notification
-        const adminMessage = `
-            NEW ORDER RECEIVED!
-            
-            Plan: ${selectedPlan.plan} (${selectedPlan.price})
-            Customer: ${formData.name}
-            Phone: ${formData.phone}
-            Method: ${paymentMethod.toUpperCase()}
-            ${paymentMethod === 'mpesa' ? `M-Pesa Code: ${formData.mpesaCode}` : 'Action: Send Invoice manually'}
-        `;
-
-        // Client Receipt / Invoice
-        let clientSubject = "";
-        let clientBody = "";
-
-        if(paymentMethod === 'mpesa') {
-            clientSubject = `Payment Receipt - ${selectedPlan.plan}`;
-            clientBody = `Hi ${formData.name},\n\nThank you for your payment of KES ${selectedPlan.price}. We have received your M-Pesa code (${formData.mpesaCode}) and are processing your order.\n\nPlan: ${selectedPlan.plan}\nStatus: Paid\n\nWelcome to Nexora!`;
-        } else {
-            clientSubject = `Invoice Generated - ${selectedPlan.plan}`;
-            clientBody = `Hi ${formData.name},\n\nThank you for choosing the ${selectedPlan.plan}. Please find your invoice details below:\n\nAmount Due: KES ${selectedPlan.price}\nPaybill: 247247\nAccount: 0340183028114\n\nPlease make payment within 24 hours to activate your service.\n\nBest,\nNexora Team`;
-        }
-
-        const adminParams = {
-            to_email: "info@nexoracreatives.co.ke",
-            from_name: "Nexora Billing",
-            reply_to: formData.email,
-            subject: `New Order: ${selectedPlan.plan}`,
-            message_body: adminMessage
-        };
+        const emailSubject = isMpesa ? "Payment Receipt" : "Invoice Generated";
+        const emailMessage = isMpesa 
+            ? `We confirm receipt of KES ${selectedPlan.price} via M-Pesa (${mpesaRef}). Your official receipt has been downloaded.`
+            : `Please find your invoice details. Paybill: 4041463, Account: ${selectedPlan.plan}. Please download the invoice generated.`;
 
         const clientParams = {
             to_email: formData.email,
-            from_name: "Nexora Billing Team",
-            reply_to: "info@nexoracreatives.co.ke",
-            subject: clientSubject,
-            message_body: clientBody
+            from_name: "Nexora Creative Solution Billing Team",
+            subject: emailSubject,
+            message_body: emailMessage,
         };
 
-        // 4. Send Emails
+        const adminParams = {
+            to_email: "info@nexoracreatives.co.ke",
+            subject: `New Order: ${selectedPlan.plan}`,
+            message_body: `New ${paymentMethod} order from ${formData.name}. Phone: ${formData.phone}`
+        };
+
         await Promise.all([
-            emailjs.send(serviceID, templateID, adminParams, publicKey),
-            emailjs.send(serviceID, templateID, clientParams, publicKey)
+            emailjs.send("service_nhwsclu", "template_61eywtf", adminParams, "ctUKvg88_0Th5sfKn"),
+            emailjs.send("service_nhwsclu", "template_61eywtf", clientParams, "ctUKvg88_0Th5sfKn")
         ]);
+
         
-        // 3. Success UI
         setStatus('success');
-        toast.success(paymentMethod === 'mpesa' ? "Payment Confirmed!" : "Invoice Generated!");
+        toast.success(paymentMethod === 'mpesa' ? "Payment Confirmed! Receipt Downloaded." : "Invoice Generated & Downloaded!");
         setTimeout(() => closeModal(), 5000);
         setLoading(false);
 
       } catch (error) {
           console.error("Save Error", error);
-          toast.error("Order saved but email failed.");
+          toast.error("Order saved, check your email but PDF generation failed.");
           setLoading(false);
       }
   };

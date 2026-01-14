@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send({ message: 'Only POST requests allowed' });
 
   // 1. RECEIVE MORE DATA (Item, Size, Color)
-  const { phone, amount, item, size } = req.body; 
+  const { phone, amount, item, size, accountRef } = req.body; 
 
   const consumerKey = process.env.MPESA_CONSUMER_KEY;
   const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
@@ -43,6 +43,8 @@ export default async function handler(req, res) {
     let formattedPhone = phone.replace('+', '');
     if (formattedPhone.startsWith('0')) formattedPhone = '254' + formattedPhone.substring(1);
 
+    const finalAccountRef = (accountRef || "Nexora Store").substring(0, 12);
+
     // 2. INITIATE STK PUSH
     const stkResponse = await axios.post(
       'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
         PartyB: businessShortCode,
         PhoneNumber: formattedPhone,
         CallBackURL: process.env.MPESA_CALLBACK_URL, 
-        AccountReference: "Nexora Store",
+        AccountReference: finalAccountRef,
         TransactionDesc: `Purchase: ${item?.name || 'Merch'}`
       },
       { headers: { Authorization: `Bearer ${accessToken}` } }
