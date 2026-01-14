@@ -160,50 +160,169 @@ export const projects = [
   }
 ];
 
-export const pricing = [
-  {
-    plan: "Starter Package",
-    price: "45,000",
-    period: "Per Project",
-    features: [
-      "Responsive Website (5 Pages)",
-      "Domain & Hosting Setup",
-      "Basic SEO Optimization",
-      "Contact Form Integration",
-      "1 Month Free Support",
-      "Social Media Links"
-    ],
-    recommended: false
-  },
-  {
-    plan: "Business Growth",
-    price: "125,000",
-    period: "Per Project",
-    features: [
-      "Dynamic Website / CMS (Admin Panel)",
-      "E-commerce (Up to 50 Products)",
-      "M-Pesa Payment Integration",
-      "Advanced SEO & Analytics",
-      "Blog/News Section",
-      "3 Months Free Support"
-    ],
-    recommended: true
-  },
-  {
-    plan: "Enterprise & Custom",
-    price: "280,000+",
-    period: "Starting From",
-    features: [
-      "Custom Web or Mobile Application",
-      "Cloud Infrastructure (AWS/Google)",
-      "API Development & Integration",
-      "Unlimited Products/Users",
-      "Automated Backups & Security",
-      "6 Months Priority Support"
-    ],
-    recommended: false
-  }
-];
+export const servicePricing = {
+  "Website Development": [
+    {
+      plan: "Static / Portfolio",
+      price: "25,000",
+      period: "One-off",
+      features: [
+        "5-Page Responsive Website",
+        "Contact Form & Google Maps",
+        "Social Media Integration",
+        "Basic SEO Setup",
+        "1 Month Free Support",
+        "1 Year Domain Name"
+      ],
+      recommended: false
+    },
+    {
+      plan: "Business / Corporate",
+      price: "45,000",
+      period: "One-off",
+      features: [
+        "Dynamic Content (CMS)",
+        "Blog/News Section",
+        "Live Chat Integration",
+        "Google Analytics Setup",
+        "Speed Optimization",
+        "3 Months Free Support"
+      ],
+      recommended: true
+    },
+    {
+      plan: "E-Commerce",
+      price: "85,000",
+      period: "Starting From",
+      features: [
+        "Online Store (Unlimited Products)",
+        "M-Pesa & Card Payments",
+        "Customer Dashboard",
+        "Inventory Management",
+        "Admin Panel",
+        "6 Months Priority Support"
+      ],
+      recommended: false
+    }
+  ],
+  "Mobile App Development": [
+    {
+      plan: "MVP App",
+      price: "150,000",
+      period: "Starting From",
+      features: [
+        "Android Only (Flutter)",
+        "Basic UI/UX",
+        "User Authentication",
+        "Local Database",
+        "Google Play Submission",
+        "1 Month Bug Fixes"
+      ],
+      recommended: false
+    },
+    {
+      plan: "Pro Cross-Platform",
+      price: "280,000",
+      period: "Starting From",
+      features: [
+        "Android & iOS (Flutter)",
+        "M-Pesa Integration",
+        "Push Notifications",
+        "Cloud Database (Firebase)",
+        "Admin Dashboard (Web)",
+        "3 Months Support"
+      ],
+      recommended: true
+    },
+    {
+      plan: "Enterprise System",
+      price: "Custom",
+      period: "Quote Based",
+      features: [
+        "Complex Logic & Algorithms",
+        "Real-time Tracking/Chat",
+        "API Integrations",
+        "Scalable Cloud Backend",
+        "Dedicated Dev Team",
+        "SLA Support Contract"
+      ],
+      recommended: false
+    }
+  ],
+  "UI/UX Design": [
+    {
+      plan: "Startup Pack",
+      price: "20,000",
+      period: "Per Project",
+      features: ["Logo Design", "Brand Color Palette", "Typography Selection", "Business Card Design"],
+      recommended: false
+    },
+    {
+      plan: "App/Web Design",
+      price: "45,000",
+      period: "Per Project",
+      features: ["High Fidelity UI (Figma)", "Interactive Prototyping", "User Journey Maps", "Design System", "Mobile & Desktop Views"],
+      recommended: true
+    },
+    {
+      plan: "Full Product Design",
+      price: "80,000+",
+      period: "Per Project",
+      features: ["User Research & Personas", "Wireframing", "Usability Testing", "Developer Handoff Docs", "Full Design System"],
+      recommended: false
+    }
+  ],
+  // Add similar arrays for Digital Marketing, Cloud, etc.
+  "Digital Marketing": [
+     { plan: "Starter SEO", price: "25,000", period: "Monthly", features: ["Keyword Research", "On-Page Optimization", "Google My Business", "Monthly Report"], recommended: false },
+     { plan: "Social Growth", price: "40,000", period: "Monthly", features: ["3 Social Platforms", "12 Posts/Month", "Community Management", "Ad Campaign Setup", "Performance Analytics"], recommended: true },
+     { plan: "Full Scale", price: "75,000", period: "Monthly", features: ["SEO + Social Media", "Content Marketing (Blogs)", "Email Campaigns", "Video Content Creation", "Dedicated Manager"], recommended: false }
+  ],
+  "Cloud & Backend": [
+    {
+      plan: "Serverless MVP",
+      price: "35,000",
+      period: "One-off",
+      features: [
+        "Firebase/Supabase Setup",
+        "User Authentication (Google/Email)",
+        "Real-time Database",
+        "Cloud Functions (Basic Logic)",
+        "Secure Rules Configuration",
+        "Hosting Setup"
+      ],
+      recommended: false
+    },
+    {
+      plan: "Custom API & DB",
+      price: "85,000",
+      period: "Starting From",
+      features: [
+        "REST/GraphQL API (Node.js/Django)",
+        "Relational Database (PostgreSQL)",
+        "VPS Setup (DigitalOcean/AWS)",
+        "Swagger Documentation",
+        "Automated Backups",
+        "1 Month Support"
+      ],
+      recommended: true
+    },
+    {
+      plan: "Scalable Infra",
+      price: "Custom",
+      period: "Quote Based",
+      features: [
+        "Microservices Architecture",
+        "Docker & Kubernetes",
+        "CI/CD Pipelines (GitHub Actions)",
+        "Load Balancing & Caching (Redis)",
+        "Advanced Security & Firewalls",
+        "SLA Support"
+      ],
+      recommended: false
+    }
+  ]
+};
 
 export const team = [
 { 
