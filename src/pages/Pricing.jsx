@@ -334,6 +334,7 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A", methodUsed = "mp
         });
 
         // 3. Prepare Email
+        const emailSubject = isPaid ? "Payment Receipt" : "Invoice Generated";
 
         let emailMessage = "";
         
