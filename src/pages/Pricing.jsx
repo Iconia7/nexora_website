@@ -230,12 +230,12 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
         // 1. Generate PDF (Data URI)
         const isMpesa = paymentMethod === 'mpesa';
         const docType = isMpesa ? "Receipt" : "Invoice";
-        const refNumber = isMpesa ? mpesaRef : `INV-${Math.floor(Math.random() * 10000)}`;
+        const refNumber = isMpesa ? receiptRef : `INV-${Math.floor(Math.random() * 10000)}`;
 
         // 1. Generate PDF
         const pdfDoc = generatePDF(docType, { 
             ref: refNumber, 
-            mpesaCode: mpesaRef 
+            mpesaCode: receiptRef 
         });
 
         // 2. Auto-Download for User
@@ -255,7 +255,7 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A") => {
 
         const emailSubject = isMpesa ? "Payment Receipt" : "Invoice Generated";
         const emailMessage = isMpesa 
-            ? `We confirm receipt of KES ${selectedPlan.price} via M-Pesa (${mpesaRef}). Your official receipt has been downloaded.`
+            ? `We confirm receipt of KES ${selectedPlan.price} via M-Pesa (${receiptRef}). Your official receipt has been downloaded.`
             : `Please find your invoice details. Paybill: 4041463, Account: ${selectedPlan.plan}. Please download the invoice generated.`;
 
         const clientParams = {

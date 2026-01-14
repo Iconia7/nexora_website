@@ -164,7 +164,7 @@ export const servicePricing = {
   "Website Development": [
     {
       plan: "Static / Portfolio",
-      price: "25,000",
+      price: "35,000",
       period: "One-off",
       features: [
         "5-Page Responsive Website",
@@ -178,7 +178,7 @@ export const servicePricing = {
     },
     {
       plan: "Business / Corporate",
-      price: "45,000",
+      price: "85,000",
       period: "One-off",
       features: [
         "Dynamic Content (CMS)",
@@ -192,7 +192,7 @@ export const servicePricing = {
     },
     {
       plan: "E-Commerce",
-      price: "85,000",
+      price: "150,000",
       period: "Starting From",
       features: [
         "Online Store (Unlimited Products)",
@@ -222,7 +222,7 @@ export const servicePricing = {
     },
     {
       plan: "Pro Cross-Platform",
-      price: "280,000",
+      price: "300,000",
       period: "Starting From",
       features: [
         "Android & iOS (Flutter)",
