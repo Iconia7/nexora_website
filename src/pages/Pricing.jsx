@@ -40,8 +40,8 @@ const Pricing = () => {
       setLoading(false);
   };
 
-  const PAYSTACK_PAGE_LINK = "https://paystack.shop/pay/o82xoyiulm";
-  const PAYSTACK_PUBLIC_KEY = "pk_test_8285ec032df0e12139f9660034610da2c10c66d8"; // Replace with your key
+  const PAYSTACK_PAGE_LINK = "https://paystack.shop/pay/x259a1rre3";
+  const PAYSTACK_PUBLIC_KEY = "pk_live_6cdd6363ff6f142ba84eb1cd87d1117f41c8c2fc"; // Replace with your key
 
   const paystackConfig = {
     reference: (new Date()).getTime().toString(),

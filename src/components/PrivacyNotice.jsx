@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-const CookieBanner = () => {
+const PrivacyNotice = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -65,4 +65,4 @@ const CookieBanner = () => {
   );
 };
 
-export default CookieBanner;
+export default PrivacyNotice;

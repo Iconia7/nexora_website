@@ -5,7 +5,7 @@ import { Suspense, lazy } from 'react';
 import Loader from './components/Loader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import CookieBanner from './components/CookieBanner';
+import PrivacyNotice from './components/PrivacyNotice';
 import WhatsAppButton from './components/WhatsAppButton';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import { Toaster } from 'react-hot-toast';
@@ -113,7 +113,7 @@ const ConditionalLayout = ({ children }) => {
       {!hideLayout && <Footer />}
 
       {/* --- ADD THEM HERE --- */}
-      {!hideLayout && <CookieBanner />}
+      {!hideLayout && <PrivacyNotice />}
       {!hideLayout && <WhatsAppButton />}
       <Toaster 
           position="top-center"
