@@ -8,12 +8,16 @@ export default async function handler(req, res) {
   console.log("----- CALLBACK RECEIVED -----", JSON.stringify(callbackData, null, 2));
 
   try {
-    const { Body } = callbackData;
+    // 1. DETECT THE CALLBACK TYPE (STK Push vs Transaction Status)
+    // STK Pushes are wrapped in { Body: { stkCallback: ... } }
+    // Transaction Queries are often just { Result: { ... } }
+    const result = callbackData.Result || callbackData.Body?.Result;
+    const stkCallback = callbackData.Body?.stkCallback;
 
-    // --- HANDLE TRANSACTION STATUS callback ---
-    if (Body.Result) {
-        const { ResultCode, ResultDesc, ConversationID, ResultParameters } = Body.Result;
-        console.log("Transaction Status Callback for Conversation:", ConversationID);
+    // --- CASE A: HANDLE TRANSACTION STATUS (Verification) ---
+    if (result) {
+        const { ResultCode, ResultDesc, ConversationID, ResultParameters } = result;
+        console.log(`Verification Callback: Code ${ResultCode} for Conversation ${ConversationID}`);
         
         const orderQuery = await db.collection("orders")
           .where("verificationConversationID", "==", ConversationID)
@@ -32,11 +36,13 @@ export default async function handler(req, res) {
                     paidAt: Timestamp.now(),
                     ...(paidAmount && { paidAmount })
                 });
+                console.log(`✅ Order ${orderDoc.id} Verified as PAID.`);
             } else {
                 await orderDoc.ref.update({
                     status: "FAILED",
                     failReason: ResultDesc
                 });
+                console.log(`❌ Order ${orderDoc.id} Verification REJECTED: ${ResultDesc}`);
             }
         } else {
             console.error("Order not found for Transaction Status ConversationID:", ConversationID);
@@ -44,8 +50,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ result: "Ok" });
     }
 
-    // --- HANDLE STK PUSH callback ---
-    const { ResultCode, ResultDesc, CheckoutRequestID, CallbackMetadata } = Body.stkCallback;
+    // --- CASE B: HANDLE STK PUSH ---
+    if (stkCallback) {
+      const { ResultCode, ResultDesc, CheckoutRequestID, CallbackMetadata } = stkCallback;
 
     // 1. FIND THE ORDER IN FIREBASE
     const orderQuery = await db.collection("orders")
@@ -81,7 +88,8 @@ export default async function handler(req, res) {
     } else {
         console.error("⚠️ Order not found in database for CheckoutID:", CheckoutRequestID);
     }
-
+    } // This is the added closing brace for the if (stkCallback) block
+    
     // Always respond 200 to Safaricom
     res.status(200).json({ result: "Ok" });
   } catch (error) {
