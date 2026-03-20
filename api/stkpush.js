@@ -7,10 +7,16 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send({ message: 'Only POST requests allowed' });
 
   // --- API PROTECTION: Confirm request is from our domain ---
-  const allowedOrigin = "https://nexoracreatives.co.ke";
-  const origin = req.headers.origin || req.headers.referer;
+  const allowedOrigins = [
+    "https://nexoracreatives.co.ke",
+    "https://www.nexoracreatives.co.ke",
+    "http://localhost:5173" // in case you need to test locally!
+  ];
+  const origin = req.headers.origin || req.headers.referer || "";
 
-  if (!origin || !origin.startsWith(allowedOrigin)) {
+  const isAllowed = allowedOrigins.some(allowed => origin.startsWith(allowed));
+
+  if (!origin || !isAllowed) {
     console.warn(`Blocked unauthorized API call from: ${origin}`);
     return res.status(403).json({ error: "Access Denied: Unauthorized Domain" });
   }
