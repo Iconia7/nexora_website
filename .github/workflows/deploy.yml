@@ -20,7 +20,9 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /var/www/nexora_main
-            git pull origin main
+            git fetch origin main
+            git clean -fd
+            git reset --hard origin/main
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             npm install
