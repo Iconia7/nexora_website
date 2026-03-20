@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Clock, ShieldCheck, ArrowLeft, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Clock, ShieldCheck, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MpesaModal from './MpesaModal';
 import SEO from './components/SEO';
+import { db } from './firebase';
+import { collection, query, getDocs, where } from 'firebase/firestore';
 
 // --- INVENTORY DATA ---
 const MERCH = [
@@ -285,11 +287,33 @@ const handleWhatsApp = () => {
 export default function Shop({ onBack }) { 
   const [view, setView] = useState('shop');
   const [successData, setSuccessData] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   // State for the ACTIVE transaction (the one being paid for right now)
   const [buyingItem, setBuyingItem] = useState(null);
   const [buyingSize, setBuyingSize] = useState(""); 
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const q = query(collection(db, "products"), where("active", "==", true));
+        const snapshot = await getDocs(q);
+        const dynamicProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // If Firestore has products, use them, otherwise use the hardcoded fallback
+        setProducts(dynamicProducts.length > 0 ? dynamicProducts : MERCH);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setProducts(MERCH); // Fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // This function is passed down to every ProductCard
   const handleBuyRequest = (item, size) => {
@@ -359,15 +383,24 @@ export default function Shop({ onBack }) {
       </div>
 
       {/* Product Grid - Renders individual ProductCards */}
-      <div className="px-6 py-12 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 -mt-10 relative z-10">
-        {MERCH.map((item, index) => (
-          <ProductCard 
-            key={item.id} 
-            item={item} 
-            index={index} 
-            onBuy={handleBuyRequest} // Pass the handler down
-          />
-        ))}
+      <div className="px-6 py-12 max-w-6xl mx-auto min-h-[400px] relative z-10">
+        {loading ? (
+             <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
+                <Loader2 size={40} className="animate-spin text-brand-rose mb-4" />
+                <p className="font-bold text-gray-400 uppercase tracking-widest text-xs">Loading Inventory...</p>
+             </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 -mt-10">
+                {products.map((item, index) => (
+                    <ProductCard 
+                        key={item.id} 
+                        item={item} 
+                        index={index} 
+                        onBuy={handleBuyRequest} 
+                    />
+                ))}
+            </div>
+        )}
       </div>
 
       {/* Payment Modal */}

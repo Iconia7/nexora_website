@@ -6,15 +6,14 @@ import { getAuth } from "firebase/auth";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCPJs5TR3wtkbr1mkx-XbyAwQzAz6lNTZM",
-  authDomain: "nexora-creative.firebaseapp.com",
-  projectId: "nexora-creative",
-  storageBucket: "nexora-creative.firebasestorage.app",
-  messagingSenderId: "264622332898",
-  appId: "1:264622332898:web:fc028517f0a986fcbd77bb",
-  measurementId: "G-NSX371NW4E"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import moment from 'moment';
+import { format } from 'date-fns';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send({ message: 'Only POST allowed' });
@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     );
     const accessToken = tokenResponse.data.access_token;
 
-    // --- 3. GENERATE PASSWORD ---
-    const timestamp = moment().format('YYYYMMDDHHmmss');
+    // --- 3. GENERATE PASSWORD (Using date-fns) ---
+    const timestamp = format(new Date(), 'yyyyMMddHHmmss');
     const password = Buffer.from(
       `${businessShortCode}${passkey}${timestamp}`
     ).toString('base64');

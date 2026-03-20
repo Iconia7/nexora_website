@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, updateDoc, doc, addDoc, deleteDoc, serverTimestamp, where } from "firebase/firestore";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from '../firebase';
 import emailjs from '@emailjs/browser';
 import toast from 'react-hot-toast';
-import { Loader2, CheckCircle, Search, RefreshCw, LogOut, ShieldCheck, X, Banknote } from 'lucide-react';
+import { Loader2, CheckCircle, Search, RefreshCw, LogOut, ShieldCheck, X, Banknote, Package, Plus, Trash2, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminPanel = () => {
@@ -21,14 +21,61 @@ const AdminPanel = () => {
   const [paymentCode, setPaymentCode] = useState(""); 
   const [processing, setProcessing] = useState(false);
 
+  // Inventory State
+  const [activeTab, setActiveTab] = useState("orders"); // "orders" | "inventory"
+  const [products, setProducts] = useState([]);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [productForm, setProductForm] = useState({
+      name: "", price: "", image: "", tag: "", shipsIn: "", sizes: "S, M, L, XL", category: "Uncategorized", active: true
+  });
+
   // --- CHECK LOGIN STATUS ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
         setUser(currentUser);
-        if (currentUser) fetchOrders();
+        if (currentUser) {
+            fetchOrders();
+            fetchProducts();
+        }
     });
     return () => unsubscribe();
   }, []);
+
+  // --- inventory handlers ---
+  const fetchProducts = async () => {
+    try {
+        const snapshot = await getDocs(collection(db, "products"));
+        setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (err) { toast.error("Failed to load products"); }
+  };
+
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    setProcessing(true);
+    try {
+        const data = { ...productForm, price: Number(productForm.price), sizes: productForm.sizes.split(",").map(s => s.trim()), updatedAt: serverTimestamp() };
+        if (editingProduct) {
+            await updateDoc(doc(db, "products", editingProduct.id), data);
+            toast.success("Product Updated");
+        } else {
+            await addDoc(collection(db, "products"), { ...data, createdAt: serverTimestamp() });
+            toast.success("Product Added");
+        }
+        setShowProductModal(false);
+        fetchProducts();
+    } catch (err) { toast.error("Error saving product"); }
+    finally { setProcessing(false); }
+  };
+
+  const deleteProduct = async (id) => {
+      if (!window.confirm("Delete this product?")) return;
+      try {
+          await deleteDoc(doc(db, "products", id));
+          toast.success("Product Deleted");
+          fetchProducts();
+      } catch (err) { toast.error("Error deleting product"); }
+  };
 
   // --- 1. SECURE LOGIN ---
   const handleLogin = async (e) => {
@@ -76,12 +123,65 @@ const AdminPanel = () => {
   // --- 4. PROCESS PAYMENT ---
   const confirmPayment = async (e) => {
       e.preventDefault();
+      
+      // 1. Basic Validation
       if (!paymentCode) return toast.error("Please enter a transaction code");
+      
+      // 2. M-Pesa Regex Validation (10 chars, starts with alpha, alphanumeric)
+      const mpesaRegex = /^[A-Z0-9]{10}$/;
+      if (!mpesaRegex.test(paymentCode)) {
+          return toast.error("Invalid Code: M-Pesa codes must be 10 characters (e.g., SAB8123XYZ)");
+      }
 
       setProcessing(true);
-      const toastId = toast.loading("Verifying & Emailing Client...");
+      const toastId = toast.loading("Verifying Code with Safaricom...");
 
       try {
+          // 3. Duplicate Check: Ensure code hasn't been used before
+          const dupQuery = query(collection(db, "orders"), where("mpesaReceipt", "==", paymentCode));
+          const dupSnapshot = await getDocs(dupQuery);
+          
+          if (!dupSnapshot.empty) {
+              toast.error("Error: This transaction code has already been used!", { id: toastId });
+              setProcessing(false);
+              return;
+          }
+
+          // 4. LIVE VERIFICATION CALL
+          // We call our new verify API to check with Safaricom
+          try {
+              const verifyRes = await fetch('/api/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ transactionID: paymentCode })
+              });
+              
+              const verifyData = await verifyRes.json();
+
+              if (!verifyRes.ok) {
+                  // If keys are missing or service is down, we notify but allow override for now 
+                  // to prevent blocking the admin if they've manually verified the statement.
+                  if (verifyRes.status === 503) {
+                      toast.error("Verification Service Unconfigured. Check .env keys.", { id: toastId });
+                  } else {
+                      toast.error(`Verification Failed: ${verifyData.error}`, { id: toastId });
+                  }
+                  
+                  if (!window.confirm("Safaricom verification failed or is unconfigured. Mark as PAID anyway based on manual statement check?")) {
+                      setProcessing(false);
+                      return;
+                  }
+              } else {
+                  toast.success("Verification request sent! Finalizing...", { id: toastId });
+              }
+          } catch (vErr) {
+              console.error("Verification Error:", vErr);
+              if (!window.confirm("Could not reach verification server. Mark as PAID anyway?")) {
+                  setProcessing(false);
+                  return;
+              }
+          }
+
           // A. Update Firebase
           const orderRef = doc(db, "orders", selectedOrder.id);
           await updateDoc(orderRef, {
@@ -92,20 +192,25 @@ const AdminPanel = () => {
 
           // B. Send Receipt Email
           const emailParams = {
-              to_email: selectedOrder.customer.email,
+              to_email: selectedOrder.customer?.email || 'info@nexoracreatives.co.ke', // Fallback
               from_name: "Nexora Creative Solutions Billing Team",
-              subject: `Payment Received - ${selectedOrder.plan.plan}`,
-              message_body: `Hi ${selectedOrder.customer.name},\n\n` +
+              subject: `Payment Received - ${selectedOrder.plan?.plan || selectedOrder.item?.name}`,
+              message_body: `Hi ${selectedOrder.customer?.name || 'Client'},\n\n` +
                             `Great news! We have confirmed your payment of KES ${selectedOrder.amount}.\n\n` +
                             `DETAILS:\n` +
-                            `Service: ${selectedOrder.plan.plan}\n` +
+                            `Service: ${selectedOrder.plan?.plan || selectedOrder.item?.name}\n` +
                             `Amount: KES ${selectedOrder.amount}\n` +
                             `Ref Code: ${paymentCode}\n\n` +
                             `Our team will be in touch shortly to start the project.\n\n` +
                             `Thank you,\nNexora Creative Solutions`
           };
 
-          await emailjs.send("service_nhwsclu", "template_61eywtf", emailParams, "ctUKvg88_0Th5sfKn");
+          await emailjs.send(
+              import.meta.env.VITE_EMAILJS_SERVICE_ID, 
+              import.meta.env.VITE_EMAILJS_TEMPLATE_ID, 
+              emailParams, 
+              import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+          );
 
           toast.success("Payment Recorded & Receipt Sent!", { id: toastId });
           fetchOrders(); 
@@ -155,70 +260,130 @@ const AdminPanel = () => {
                 <p className="text-gray-500 mt-2 font-medium">Logged in as: {user.email}</p>
             </div>
             <div className="flex gap-3">
-                <button onClick={fetchOrders} className="bg-white border border-gray-200 text-brand-charcoal px-4 py-2 rounded-xl hover:bg-gray-50 flex items-center gap-2 text-sm font-bold shadow-sm transition-all"><RefreshCw size={18} className={loading ? "animate-spin" : ""} /> REFRESH</button>
+                <div className="flex bg-white rounded-xl p-1 border border-gray-200 shadow-sm mr-4">
+                    <button onClick={() => setActiveTab("orders")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === "orders" ? "bg-brand-charcoal text-white shadow-md" : "text-gray-400 hover:text-brand-charcoal"}`}>ORDERS</button>
+                    <button onClick={() => setActiveTab("inventory")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === "inventory" ? "bg-brand-charcoal text-white shadow-md" : "text-gray-400 hover:text-brand-charcoal"}`}>INVENTORY</button>
+                </div>
+                <button onClick={activeTab === "orders" ? fetchOrders : fetchProducts} className="bg-white border border-gray-200 text-brand-charcoal px-4 py-2 rounded-xl hover:bg-gray-50 flex items-center gap-2 text-sm font-bold shadow-sm transition-all"><RefreshCw size={18} className={loading ? "animate-spin" : ""} /> REFRESH</button>
                 <button onClick={handleLogout} className="bg-brand-rose/10 text-brand-rose border border-brand-rose/20 px-4 py-2 rounded-xl hover:bg-brand-rose hover:text-white flex items-center gap-2 text-sm font-bold shadow-sm transition-all"><LogOut size={18} /> LOGOUT</button>
             </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[900px]">
-                    <thead className="bg-brand-charcoal text-white text-xs uppercase tracking-widest">
-                        <tr>
-                            <th className="p-5 font-bold">Date</th>
-                            <th className="p-5 font-bold">Client Details</th>
-                            <th className="p-5 font-bold">Service Plan</th>
-                            <th className="p-5 font-bold">Amount</th>
-                            <th className="p-5 font-bold">Status</th>
-                            <th className="p-5 font-bold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm">
-                        {orders.map((order) => {
-                            const isPaid = order.status && (order.status.toLowerCase().includes("paid"));
-                            return (
-                            <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
-                                <td className="p-5 text-gray-500 whitespace-nowrap font-medium">
-                                    {order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}
-                                    <div className="text-xs opacity-50 mt-1">{order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
-                                </td>
-                                <td className="p-5">
-                                    <p className="font-black text-brand-charcoal text-base">{order.customer.name}</p>
-                                    <p className="text-xs font-bold text-brand-rose mt-0.5">{order.customer.phone}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{order.customer.email}</p>
-                                </td>
-                                <td className="p-5">
-                                    <span className="font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs uppercase tracking-wide">{order.plan.category}</span>
-                                    <div className="font-bold text-brand-charcoal mt-1 text-base">{order.plan.plan}</div>
-                                </td>
-                                <td className="p-5 font-black text-xl text-brand-charcoal whitespace-nowrap">KES {order.amount}</td>
-                                <td className="p-5">
-                                    <span className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm ${isPaid ? "bg-green-100 text-green-800 border border-green-200" : "bg-yellow-50 text-yellow-700 border border-yellow-200"}`}>
-                                        {isPaid ? <CheckCircle size={14}/> : <Loader2 size={14} className="animate-spin"/>}
-                                        {isPaid ? "PAID" : "PENDING"}
-                                    </span>
-                                    {order.mpesaReceipt && order.mpesaReceipt !== "N/A" && (
-                                        <div className="text-[10px] text-gray-400 mt-2 font-mono bg-gray-50 inline-block px-1 rounded border border-gray-100">{order.mpesaReceipt}</div>
-                                    )}
-                                </td>
-                                <td className="p-5 text-right">
-                                    {!isPaid && (
-                                        <button 
-                                            onClick={() => openPaymentModal(order)} 
-                                            className="bg-brand-charcoal text-white text-xs px-5 py-2.5 rounded-xl hover:bg-brand-rose transition-all shadow-md hover:shadow-lg font-bold transform hover:-translate-y-0.5"
-                                        >
-                                            MARK PAID
-                                        </button>
-                                    )}
-                                    {isPaid && <span className="text-xs text-gray-300 font-bold uppercase tracking-wider">Completed</span>}
-                                </td>
-                            </tr>
-                        )})}
-                    </tbody>
-                </table>
+        {activeTab === "inventory" && (
+            <div className="mb-6 flex justify-between items-center bg-white p-6 rounded-3xl border border-gray-100 shadow-xl">
+                <div>
+                   <h2 className="text-xl font-bold text-brand-charcoal">Shop Inventory</h2>
+                   <p className="text-sm text-gray-400">Manage products, pricing and visibility</p>
+                </div>
+                <button 
+                  onClick={() => { setEditingProduct(null); setProductForm({ name: "", price: "", image: "", tag: "", shipsIn: "", sizes: "S, M, L, XL", category: "Uncategorized", active: true }); setShowProductModal(true); }}
+                  className="bg-brand-charcoal text-white px-6 py-3 rounded-xl hover:bg-brand-rose flex items-center gap-2 font-bold shadow-lg transition-all transform hover:-translate-y-1"
+                >
+                    <Plus size={20} /> ADD NEW PRODUCT
+                </button>
             </div>
-            {orders.length === 0 && !loading && <div className="p-16 text-center"><p className="text-gray-400">No orders found.</p></div>}
+        )}
+
+        {/* Content Area */}
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+            {activeTab === "orders" ? (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[900px]">
+                        <thead className="bg-brand-charcoal text-white text-xs uppercase tracking-widest">
+                            <tr>
+                                <th className="p-5 font-bold">Date</th>
+                                <th className="p-5 font-bold">Client Details</th>
+                                <th className="p-5 font-bold">Service Plan</th>
+                                <th className="p-5 font-bold">Amount</th>
+                                <th className="p-5 font-bold">Status</th>
+                                <th className="p-5 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-sm">
+                            {orders.map((order) => {
+                                const isPaid = order.status && (order.status.toLowerCase().includes("paid"));
+                                return (
+                                <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="p-5 text-gray-500 whitespace-nowrap font-medium">
+                                        {order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}
+                                        <div className="text-xs opacity-50 mt-1">{order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
+                                    </td>
+                                    <td className="p-5">
+                                        <p className="font-black text-brand-charcoal text-base">{order.customer?.name || order.phone}</p>
+                                        <p className="text-xs font-bold text-brand-rose mt-0.5">{order.customer?.phone || order.phone}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{order.customer?.email || 'N/A'}</p>
+                                    </td>
+                                    <td className="p-5">
+                                        <span className="font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs uppercase tracking-wide">{order.plan?.category || 'Shop'}</span>
+                                        <div className="font-bold text-brand-charcoal mt-1 text-base">{order.plan?.plan || order.item?.name || 'Item'}</div>
+                                    </td>
+                                    <td className="p-5 font-black text-xl text-brand-charcoal whitespace-nowrap">KES {order.amount}</td>
+                                    <td className="p-5">
+                                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm ${isPaid ? "bg-green-100 text-green-800 border border-green-200" : "bg-yellow-50 text-yellow-700 border border-yellow-200"}`}>
+                                            {isPaid ? <CheckCircle size={14}/> : <Loader2 size={14} className="animate-spin"/>}
+                                            {isPaid ? "PAID" : "PENDING"}
+                                        </span>
+                                        {order.mpesaReceipt && order.mpesaReceipt !== "N/A" && (
+                                            <div className="text-[10px] text-gray-400 mt-2 font-mono bg-gray-50 inline-block px-1 rounded border border-gray-100">{order.mpesaReceipt}</div>
+                                        )}
+                                    </td>
+                                    <td className="p-5 text-right">
+                                        {!isPaid && (
+                                            <button 
+                                                onClick={() => openPaymentModal(order)} 
+                                                className="bg-brand-charcoal text-white text-xs px-5 py-2.5 rounded-xl hover:bg-brand-rose transition-all shadow-md hover:shadow-lg font-bold transform hover:-translate-y-0.5"
+                                            >
+                                                MARK PAID
+                                            </button>
+                                        )}
+                                        {isPaid && <span className="text-xs text-gray-300 font-bold uppercase tracking-wider">Completed</span>}
+                                    </td>
+                                </tr>
+                            )})}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[900px]">
+                        <thead className="bg-brand-charcoal text-white text-xs uppercase tracking-widest">
+                            <tr>
+                                <th className="p-5 font-bold">Img</th>
+                                <th className="p-5 font-bold">Product Name</th>
+                                <th className="p-5 font-bold">Price</th>
+                                <th className="p-5 font-bold">Category</th>
+                                <th className="p-5 font-bold">Status</th>
+                                <th className="p-5 font-bold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-sm">
+                            {products.map((item) => (
+                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-5"><img src={item.image} className="w-10 h-10 object-contain bg-gray-50 rounded-lg p-1 border border-gray-100" /></td>
+                                    <td className="p-5 font-black text-brand-charcoal">{item.name}</td>
+                                    <td className="p-5 font-bold text-brand-rose text-base">KES {item.price}</td>
+                                    <td className="p-5"><span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded uppercase">{item.category}</span></td>
+                                    <td className="p-5">
+                                        <span className={`px-2 py-1 rounded-full text-[10px] font-black ${item.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                            {item.active ? "LIVE" : "HIDDEN"}
+                                        </span>
+                                    </td>
+                                    <td className="p-5 text-right space-x-2">
+                                        <button onClick={() => { setEditingProduct(item); setProductForm({ ...item, sizes: item.sizes.join(", ") }); setShowProductModal(true); }} className="p-2 text-brand-charcoal hover:text-brand-rose"><Edit size={18}/></button>
+                                        <button onClick={() => deleteProduct(item.id)} className="p-2 text-brand-charcoal hover:text-red-600"><Trash2 size={18}/></button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+            {((activeTab === "orders" ? orders : products).length === 0) && !loading && (
+                <div className="p-16 text-center text-gray-400 font-medium">
+                   <Package size={48} className="mx-auto mb-4 opacity-20" />
+                   No {activeTab} found.
+                </div>
+            )}
         </div>
       </div>
 
@@ -277,6 +442,63 @@ const AdminPanel = () => {
                 </motion.div>
             </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* --- PRODUCT MODAL --- */}
+      <AnimatePresence>
+          {showProductModal && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-charcoal/80 backdrop-blur-sm">
+                  <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
+                      <div className="bg-brand-charcoal p-6 text-white flex justify-between items-center">
+                          <h3 className="text-xl font-bold">{editingProduct ? "Edit Product" : "New Product"}</h3>
+                          <button onClick={() => setShowProductModal(false)}><X size={24}/></button>
+                      </div>
+                      <form onSubmit={handleProductSubmit} className="p-8 grid grid-cols-2 gap-4">
+                          <div className="col-span-2">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Product Name</label>
+                              <input required value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose" placeholder="e.g. Agency Hoodie" />
+                          </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Price (KES)</label>
+                              <input required type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose" placeholder="2800" />
+                          </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Category</label>
+                              <select value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose">
+                                  <option>Hoodies</option>
+                                  <option>Sweatshirts</option>
+                                  <option>T-Shirts</option>
+                                  <option>Other</option>
+                              </select>
+                          </div>
+                          <div className="col-span-2">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Image URL (e.g. /images/Black.png)</label>
+                              <input required value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose" placeholder="/images/..." />
+                          </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Tagline</label>
+                              <input value={productForm.tag} onChange={e => setProductForm({...productForm, tag: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose" placeholder="Heavyweight Cotton" />
+                          </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Shipping Info</label>
+                              <input value={productForm.shipsIn} onChange={e => setProductForm({...productForm, shipsIn: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose" placeholder="3-5 Days" />
+                          </div>
+                          <div className="col-span-2">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase">Sizes (comma separated)</label>
+                              <input value={productForm.sizes} onChange={e => setProductForm({...productForm, sizes: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-brand-rose" placeholder="S, M, L, XL" />
+                          </div>
+                          <div className="col-span-2 flex items-center gap-2 mt-2">
+                              <input type="checkbox" checked={productForm.active} onChange={e => setProductForm({...productForm, active: e.target.checked})} />
+                              <label className="text-xs font-bold text-gray-600">Product is Live on Shop</label>
+                          </div>
+                          <button disabled={processing} className="col-span-2 mt-4 bg-brand-rose text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">
+                              {processing ? <Loader2 className="animate-spin"/> : <Package size={20}/>}
+                              {editingProduct ? "UPDATE PRODUCT" : "SAVE PRODUCT"}
+                          </button>
+                      </form>
+                  </motion.div>
+              </motion.div>
+          )}
       </AnimatePresence>
     </div>
   );

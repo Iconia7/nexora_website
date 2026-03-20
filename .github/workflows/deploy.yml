@@ -25,4 +25,8 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             npm install
             npm run build
+            
+            # Restart backend API.
+            pm2 restart nexora-api
+            
             echo "🚀 Deployment successful!"

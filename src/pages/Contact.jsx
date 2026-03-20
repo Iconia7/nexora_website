@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Phone, Mail, Clock, MapPin, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; // Ensure you have your firebase config here
+import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
-import { useRef } from 'react';
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from 'react-hot-toast';
 
@@ -58,9 +57,9 @@ if (!token) {
     });
 
     // 2. EmailJS Configuration
-        const serviceID = "service_nhwsclu"; 
-        const templateID = "template_61eywtf"; 
-        const publicKey = "ctUKvg88_0Th5sfKn";
+        const serviceID = import.meta.env.VITE_EMAILJS_SERVICE_ID; 
+        const templateID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID; 
+        const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
     // --- EMAIL 1: Notification to YOU (Admin) ---
     const adminMessage = `
@@ -271,7 +270,7 @@ if (!token) {
                 <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
               

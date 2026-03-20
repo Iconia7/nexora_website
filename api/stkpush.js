@@ -1,25 +1,19 @@
-// api/stkpush.js
 import axios from 'axios';
-import moment from 'moment';
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
-
-// --- FIREBASE CONFIG (Same as your frontend) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCPJs5TR3wtkbr1mkx-XbyAwQzAz6lNTZM",
-  authDomain: "nexora-creative.firebaseapp.com",
-  projectId: "nexora-creative",
-  storageBucket: "nexora-creative.firebasestorage.app",
-  messagingSenderId: "264622332898",
-  appId: "1:264622332898:web:fc028517f0a986fcbd77bb",
-};
-
-// Initialize only if not already initialized
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
+import { format } from 'date-fns';
+import { db } from './utils/firebaseAdmin.js';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send({ message: 'Only POST requests allowed' });
+
+  // --- API PROTECTION: Confirm request is from our domain ---
+  const allowedOrigin = "https://nexoracreatives.co.ke";
+  const origin = req.headers.origin || req.headers.referer;
+
+  if (!origin || !origin.startsWith(allowedOrigin)) {
+    console.warn(`Blocked unauthorized API call from: ${origin}`);
+    return res.status(403).json({ error: "Access Denied: Unauthorized Domain" });
+  }
 
   // 1. RECEIVE MORE DATA (Item, Size, Color)
   const { phone, amount, item, size, accountRef } = req.body; 
@@ -37,7 +31,7 @@ export default async function handler(req, res) {
     );
     const accessToken = tokenResponse.data.access_token;
 
-    const timestamp = moment().format('YYYYMMDDHHmmss');
+    const timestamp = format(new Date(), 'yyyyMMddHHmmss');
     const password = Buffer.from(`${businessShortCode}${passkey}${timestamp}`).toString('base64');
 
     let formattedPhone = phone.replace('+', '');
@@ -64,18 +58,18 @@ export default async function handler(req, res) {
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
-    // 3. --- SAVE TO FIREBASE (PENDING) ---
+    // 3. --- SAVE TO FIREBASE ---
     // We use the CheckoutRequestID as the unique key to link this order
     const checkoutRequestID = stkResponse.data.CheckoutRequestID;
 
-    await addDoc(collection(db, "orders"), {
+    await db.collection("orders").add({
         checkoutRequestID: checkoutRequestID,
         phone: formattedPhone,
         amount: amount,
         status: "PENDING", // Initial status
         item: item || "Unknown Item",
         size: size || "N/A",
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
         mpesaReceipt: "" // Empty for now
     });
 

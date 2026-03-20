@@ -1,68 +1,55 @@
-// api/callback.js
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
-
-// Reuse Config
-const firebaseConfig = {
-  apiKey: "AIzaSyCPJs5TR3wtkbr1mkx-XbyAwQzAz6lNTZM",
-  authDomain: "nexora-creative.firebaseapp.com",
-  projectId: "nexora-creative",
-  storageBucket: "nexora-creative.firebasestorage.app",
-  messagingSenderId: "264622332898",
-  appId: "1:264622332898:web:fc028517f0a986fcbd77bb",
-};
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
+import { db } from './utils/firebaseAdmin.js';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const callbackData = req.body;
-    console.log("----- CALLBACK RECEIVED -----", JSON.stringify(callbackData, null, 2));
+  if (req.method !== 'POST') return res.status(405).end();
 
-    const resultCode = callbackData.Body.stkCallback.ResultCode;
-    const checkoutRequestID = callbackData.Body.stkCallback.CheckoutRequestID;
+  const callbackData = req.body;
+  console.log("----- CALLBACK RECEIVED -----", JSON.stringify(callbackData, null, 2));
+
+  try {
+    const { Body } = callbackData;
+    const { ResultCode, ResultDesc, CheckoutRequestID, CallbackMetadata } = Body.stkCallback;
 
     // 1. FIND THE ORDER IN FIREBASE
-    // We query by CheckoutRequestID to find the document we created in stkpush.js
-    const q = query(collection(db, "orders"), where("checkoutRequestID", "==", checkoutRequestID));
-    const querySnapshot = await getDocs(q);
+    const orderQuery = await db.collection("orders")
+      .where("checkoutRequestID", "==", CheckoutRequestID)
+      .limit(1)
+      .get();
 
-    if (!querySnapshot.empty) {
-        const orderDoc = querySnapshot.docs[0]; // The specific order document
-        const orderRef = doc(db, "orders", orderDoc.id);
+    if (!orderQuery.empty) {
+        const orderDoc = orderQuery.docs[0];
 
-        if (resultCode === 0) {
+        if (ResultCode === 0) {
             // --- SUCCESS CASE ---
-            const metaData = callbackData.Body.stkCallback.CallbackMetadata.Item;
+            const metaData = CallbackMetadata.Item;
             const receiptNumber = metaData.find(o => o.Name === 'MpesaReceiptNumber')?.Value;
             const paidAmount = metaData.find(o => o.Name === 'Amount')?.Value;
 
-            console.log(`✅ Order ${checkoutRequestID} CONFIRMED. Receipt: ${receiptNumber}`);
+            console.log(`✅ Order ${CheckoutRequestID} CONFIRMED. Receipt: ${receiptNumber}`);
 
-            // Update Firebase
-            await updateDoc(orderRef, {
+            await orderDoc.ref.update({
                 status: "PAID",
                 mpesaReceipt: receiptNumber,
-                paidAt: new Date(),
+                paidAt: Timestamp.now(),
                 paidAmount: paidAmount
             });
-
         } else {
             // --- FAILED/CANCELLED CASE ---
-            console.log(`❌ Order ${checkoutRequestID} FAILED.`);
-            await updateDoc(orderRef, {
+            console.log(`❌ Order ${CheckoutRequestID} FAILED.`);
+            await orderDoc.ref.update({
                 status: "FAILED",
-                failReason: callbackData.Body.stkCallback.ResultDesc
+                failReason: ResultDesc
             });
         }
     } else {
-        console.error("⚠️ Order not found in database for CheckoutID:", checkoutRequestID);
+        console.error("⚠️ Order not found in database for CheckoutID:", CheckoutRequestID);
     }
 
     // Always respond 200 to Safaricom
     res.status(200).json({ result: "Ok" });
-  } else {
-    res.status(405).end();
+  } catch (error) {
+    console.error("Callback Processing Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}
+}
