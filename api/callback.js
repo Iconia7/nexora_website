@@ -9,6 +9,42 @@ export default async function handler(req, res) {
 
   try {
     const { Body } = callbackData;
+
+    // --- HANDLE TRANSACTION STATUS callback ---
+    if (Body.Result) {
+        const { ResultCode, ResultDesc, ConversationID, ResultParameters } = Body.Result;
+        console.log("Transaction Status Callback for Conversation:", ConversationID);
+        
+        const orderQuery = await db.collection("orders")
+          .where("verificationConversationID", "==", ConversationID)
+          .limit(1)
+          .get();
+          
+        if (!orderQuery.empty) {
+            const orderDoc = orderQuery.docs[0];
+            if (ResultCode === 0) {
+                const params = ResultParameters?.ResultParameter || [];
+                const receipt = params.find(p => p.Key === "ReceiptNo")?.Value;
+                const paidAmount = params.find(p => p.Key === "Amount")?.Value;
+                
+                await orderDoc.ref.update({
+                    status: `PAID (Confirmed: ${receipt || orderDoc.data().mpesaReceipt})`,
+                    paidAt: Timestamp.now(),
+                    ...(paidAmount && { paidAmount })
+                });
+            } else {
+                await orderDoc.ref.update({
+                    status: "FAILED",
+                    failReason: ResultDesc
+                });
+            }
+        } else {
+            console.error("Order not found for Transaction Status ConversationID:", ConversationID);
+        }
+        return res.status(200).json({ result: "Ok" });
+    }
+
+    // --- HANDLE STK PUSH callback ---
     const { ResultCode, ResultDesc, CheckoutRequestID, CallbackMetadata } = Body.stkCallback;
 
     // 1. FIND THE ORDER IN FIREBASE

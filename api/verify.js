@@ -1,11 +1,12 @@
 // api/verify.js
 import axios from 'axios';
+import { db } from './utils/firebaseAdmin.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send({ message: 'Only POST requests allowed' });
 
-  const { transactionID } = req.body;
-  if (!transactionID) return res.status(400).json({ error: "Transaction ID is required" });
+  const { transactionID, orderId } = req.body;
+  if (!transactionID || !orderId) return res.status(400).json({ error: "Transaction ID and Order ID are required" });
 
   const consumerKey = process.env.MPESA_CONSUMER_KEY;
   const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
@@ -56,6 +57,16 @@ export default async function handler(req, res) {
     // In many cases, the actual result comes to the ResultURL.
     // For this specific use case, we will notify the user that the request was sent.
     
+    // Save mapping to Firebase so the callback knows which order this is
+    if (response.data && response.data.ConversationID) {
+      const orderRef = db.collection("orders").doc(orderId);
+      await orderRef.update({
+          status: "VERIFYING",
+          mpesaReceipt: transactionID,
+          verificationConversationID: response.data.ConversationID
+      });
+    }
+
     res.status(200).json({ 
         message: "Verification request sent to Safaricom.", 
         raw: response.data 

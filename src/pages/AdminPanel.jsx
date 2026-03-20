@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, updateDoc, doc, addDoc, deleteDoc, serverTimestamp, where } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, updateDoc, doc, addDoc, deleteDoc, serverTimestamp, where, onSnapshot } from "firebase/firestore";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from '../firebase';
 import emailjs from '@emailjs/browser';
@@ -153,7 +153,7 @@ const AdminPanel = () => {
               const verifyRes = await fetch('/api/verify', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ transactionID: paymentCode })
+                  body: JSON.stringify({ transactionID: paymentCode, orderId: selectedOrder.id })
               });
               
               const verifyData = await verifyRes.json();
@@ -170,6 +170,19 @@ const AdminPanel = () => {
                   if (!window.confirm("Safaricom verification failed or is unconfigured. Mark as PAID anyway based on manual statement check?")) {
                       setProcessing(false);
                       return;
+                  } else {
+                      // Manual admin override
+                      const orderRef = doc(db, "orders", selectedOrder.id);
+                      await updateDoc(orderRef, {
+                          status: `PAID (Admin Override: ${paymentCode})`,
+                          mpesaReceipt: paymentCode,
+                          paidAt: new Date()
+                      });
+                      toast.success("Force Paid!", { id: toastId });
+                      fetchOrders();
+                      closePaymentModal();
+                      setProcessing(false);
+                      return;
                   }
               } else {
                   toast.success("Verification request sent! Finalizing...", { id: toastId });
@@ -179,49 +192,76 @@ const AdminPanel = () => {
               if (!window.confirm("Could not reach verification server. Mark as PAID anyway?")) {
                   setProcessing(false);
                   return;
+              } else {
+                  // Manual admin override
+                  const orderRef = doc(db, "orders", selectedOrder.id);
+                  await updateDoc(orderRef, {
+                      status: `PAID (Admin Override: ${paymentCode})`,
+                      mpesaReceipt: paymentCode,
+                      paidAt: new Date()
+                  });
+                  toast.success("Force Paid!", { id: toastId });
+                  fetchOrders();
+                  closePaymentModal();
+                  setProcessing(false);
+                  return;
               }
           }
 
-          // A. Update Firebase
-          const orderRef = doc(db, "orders", selectedOrder.id);
-          await updateDoc(orderRef, {
-              status: `PAID (Confirmed: ${paymentCode})`,
-              mpesaReceipt: paymentCode,
-              paidAt: new Date()
+          // A. Wait for actual Safaricom Callback via Firestore Listener
+          toast.loading("Waiting for Safaricom confirmation (may take 5-10s)...", { id: toastId });
+          
+          const unsubscribe = onSnapshot(doc(db, "orders", selectedOrder.id), async (docSnap) => {
+              const data = docSnap.data();
+              if (data?.status?.startsWith("PAID")) {
+                  unsubscribe();
+                  
+                  // B. Send Receipt Email
+                  try {
+                      const emailParams = {
+                          to_email: selectedOrder.customer?.email || 'info@nexoracreatives.co.ke',
+                          from_name: "Nexora Creative Solutions Billing Team",
+                          subject: `Payment Received - ${selectedOrder.plan?.plan || selectedOrder.item?.name}`,
+                          message_body: `Hi ${selectedOrder.customer?.name || 'Client'},\n\n` +
+                                        `Great news! We have confirmed your payment of KES ${selectedOrder.amount}.\n\n` +
+                                        `DETAILS:\n` +
+                                        `Service: ${selectedOrder.plan?.plan || selectedOrder.item?.name}\n` +
+                                        `Amount: KES ${selectedOrder.amount}\n` +
+                                        `Ref Code: ${paymentCode}\n\n` +
+                                        `Our team will be in touch shortly to start the project.\n\n` +
+                                        `Thank you,\nNexora Creative Solutions`
+                      };
+
+                      await emailjs.send(
+                          import.meta.env.VITE_EMAILJS_SERVICE_ID, 
+                          import.meta.env.VITE_EMAILJS_TEMPLATE_ID, 
+                          emailParams, 
+                          import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+                      );
+                      toast.success("Payment Recorded & Receipt Sent!", { id: toastId });
+                  } catch (e) {
+                      toast.success("Payment Recorded locally (Receipt email failed)", { id: toastId });
+                  }
+                  
+                  fetchOrders(); 
+                  closePaymentModal();
+                  setProcessing(false);
+              } else if (data?.status === "FAILED") {
+                  unsubscribe();
+                  toast.error(`Verification Failed: Code is Invalid or Fake! (${data.failReason || 'Rejected'})`, { id: toastId, duration: 6000 });
+                  fetchOrders();
+                  setProcessing(false);
+              }
           });
-
-          // B. Send Receipt Email
-          const emailParams = {
-              to_email: selectedOrder.customer?.email || 'info@nexoracreatives.co.ke', // Fallback
-              from_name: "Nexora Creative Solutions Billing Team",
-              subject: `Payment Received - ${selectedOrder.plan?.plan || selectedOrder.item?.name}`,
-              message_body: `Hi ${selectedOrder.customer?.name || 'Client'},\n\n` +
-                            `Great news! We have confirmed your payment of KES ${selectedOrder.amount}.\n\n` +
-                            `DETAILS:\n` +
-                            `Service: ${selectedOrder.plan?.plan || selectedOrder.item?.name}\n` +
-                            `Amount: KES ${selectedOrder.amount}\n` +
-                            `Ref Code: ${paymentCode}\n\n` +
-                            `Our team will be in touch shortly to start the project.\n\n` +
-                            `Thank you,\nNexora Creative Solutions`
-          };
-
-          await emailjs.send(
-              import.meta.env.VITE_EMAILJS_SERVICE_ID, 
-              import.meta.env.VITE_EMAILJS_TEMPLATE_ID, 
-              emailParams, 
-              import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-          );
-
-          toast.success("Payment Recorded & Receipt Sent!", { id: toastId });
-          fetchOrders(); 
-          closePaymentModal();
+          
+          // Let the listener control `processing` state asynchronously
 
       } catch (error) {
           console.error(error);
           toast.error("Error updating order", { id: toastId });
-      } finally {
           setProcessing(false);
       }
+          // finally block removed so it doesn't prematurely reset processing = false.
   };
 
   // --- LOGIN SCREEN (With Padding for Navbar) ---
