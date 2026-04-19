@@ -32,7 +32,11 @@ export const subscribeNewsletter = (email) => api.post('/newsletter/', { email }
 export const fetchStats = () => api.get('/stats/');
 
 // Payments
-export const initiateStkPush = (data) => api.post('/mpesa/stkpush/', data);
+export const initiateStkPush = (data) => api.post('/mpesa/stkpush/', data, {
+    headers: {
+        'X-Nexora-Secret': import.meta.env.VITE_API_SECRET
+    }
+});
 export const checkOrderStatus = (id) => api.get(`/orders/${id}/`);
 export const checkPaymentStatus = checkOrderStatus;
 

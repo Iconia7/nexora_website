@@ -29,6 +29,6 @@ jobs:
             npm run build
             
             # Restart backend API.
-            pm2 restart nexora-api
+            pm2 restart nexora-backend
             
             echo "🚀 Deployment successful!"
