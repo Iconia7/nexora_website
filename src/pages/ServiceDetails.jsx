@@ -209,7 +209,7 @@ if (!token) {
                     <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                         <h3 className="font-bold text-xl text-brand-charcoal mb-4">All Services</h3>
                         <div className="space-y-2">
-                            {services.map(s => (
+                            {allServices.map(s => (
                                 <Link 
                                     key={s.id} 
                                     to={`/services/${s.id}`} 

@@ -37,7 +37,7 @@ export const initiateStkPush = (data) => api.post('/mpesa/stkpush/', data, {
         'X-Nexora-Secret': import.meta.env.VITE_API_SECRET
     }
 });
-export const checkOrderStatus = (id) => api.get(`/orders/${id}/`);
+export const checkOrderStatus = (checkoutID) => api.get(`/mpesa/check_status/?checkout_id=${checkoutID}`);
 export const checkPaymentStatus = checkOrderStatus;
 
 export default api;
