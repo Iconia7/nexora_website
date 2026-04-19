@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
+import { subscribeNewsletter } from '../api';
 import Logo from '../assets/NCS_Logo.png'; 
 import FooterPattern from '../assets/pattern.png';
 import { useRef } from 'react';
@@ -35,12 +34,8 @@ if (!token) {
     setMessage('');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "newsletter_subscribers"), {
-            email: email,
-            timestamp: serverTimestamp(),
-            source: 'Footer'
-        });
+        // 1. Save to Backend API
+        await subscribeNewsletter(email);
 
         // 2. Send Email Notification
         const serviceID = "service_nhwsclu"; 
@@ -144,7 +139,7 @@ if (!token) {
 <div className="mb-2 flex justify-center md:justify-start">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN" // <--- IMPORTANT for Footer
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY} // <--- IMPORTANT for Footer
     />
 </div>
 

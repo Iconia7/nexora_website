@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { team } from '../data';
+import React, { useState, useEffect } from 'react';
+import { fetchTeamMembers } from '../api';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Linkedin, Instagram, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -18,11 +16,26 @@ const fadeInUp = {
 };
 
 const Team = () => {
+  const [team, setTeam] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   // --- NEWSLETTER LOGIC ---
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [message, setMessage] = useState('');
   const captchaRef = useRef(null);
+
+  useEffect(() => {
+    fetchTeamMembers()
+      .then(res => {
+        setTeam(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching team:", err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -34,8 +47,8 @@ const Team = () => {
         return;
     }
 
-    // CAPTCHA CHECK (If implemented globally, add here. For now, simple check is okay)
- const token = captchaRef.current.getValue();
+    // CAPTCHA CHECK
+  const token = captchaRef.current.getValue();
 if (!token) {
     toast.error("Please verify that you are not a robot 🤖");
     return;
@@ -45,12 +58,7 @@ if (!token) {
     setMessage('');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "newsletter_subscribers"), {
-            email: email,
-            timestamp: serverTimestamp(),
-            source: 'Team Page'
-        });
+        // --- NOTE: Firebase newsletter log removed ---
 
         // 2. Email Notification (Optional - to Admin)
         const serviceID = "service_nhwsclu"; 
@@ -125,51 +133,58 @@ if (!token) {
             <h2 className="text-4xl font-bold text-brand-charcoal mt-2">Meet Our <span className="text-brand-rose">Expert Team</span></h2>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-8">
-          {team.map((member) => (
-            <motion.div 
-              key={member.id}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeInUp}
-              className="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 w-full sm:w-[350px]"
-            >
-              <div className="relative h-[350px] overflow-hidden">
-                <img 
-                  src={member.image} 
-                  alt={member.name} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                />
-                
-                {/* Social Overlay - Dynamic Links */}
-                <div className="absolute inset-0 bg-brand-charcoal/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-                    {member.socials && Object.entries(member.socials).map(([platform, url], i) => {
-                        const Icon = SocialIconMap[platform];
-                        return Icon ? (
-                            <a 
-                                key={i} 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-brand-charcoal hover:bg-brand-rose hover:text-white cursor-pointer transition transform hover:-translate-y-1"
-                            >
-                                <Icon size={18}/>
-                            </a>
-                        ) : null;
-                    })}
-                </div>
-              </div>
-              
-              <div className="p-6 text-center">
-                <h3 className="text-2xl font-bold text-brand-charcoal mb-1">
-                    <Link to={`/team/${member.id}`} className="hover:text-brand-rose transition">{member.name}</Link>
-                </h3>
-                <p className="text-gray-500 font-medium">{member.role}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+             <div className="flex justify-center p-20">
+                 <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+             </div>
+        ) : (
+            <div className="flex flex-wrap justify-center gap-8">
+              {team.map((member) => (
+                <motion.div 
+                  key={member.id}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={fadeInUp}
+                  className="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 w-full sm:w-[350px]"
+                >
+                  <div className="relative h-[350px] overflow-hidden">
+                    <img 
+                      src={member.image} 
+                      alt={member.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    />
+                    
+                    {/* Social Overlay - Dynamic Links */}
+                    <div className="absolute inset-0 bg-brand-charcoal/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+                        {['facebook', 'twitter', 'linkedin', 'instagram'].map((platform, i) => {
+                            const Icon = SocialIconMap[platform];
+                            const url = member[platform];
+                            return url ? (
+                                <a 
+                                    key={i} 
+                                    href={url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-brand-charcoal hover:bg-brand-rose hover:text-white cursor-pointer transition transform hover:-translate-y-1"
+                                >
+                                    <Icon size={18}/>
+                                </a>
+                            ) : null;
+                        })}
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 text-center">
+                    <h3 className="text-2xl font-bold text-brand-charcoal mb-1">
+                        <Link to={`/team/${member.id}`} className="hover:text-brand-rose transition">{member.name}</Link>
+                    </h3>
+                    <p className="text-gray-500 font-medium">{member.role}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+        )}
       </div>
 
       {/* 3. Newsletter Section (FUNCTIONAL) */}
@@ -196,7 +211,7 @@ if (!token) {
                          <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
                          

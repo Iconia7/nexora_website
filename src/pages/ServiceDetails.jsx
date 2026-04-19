@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { services } from '../data';
+import { fetchServiceById, fetchServices } from '../api';
 import { CheckCircle, ArrowRight, HelpCircle, Loader2, CheckCircle as CheckIcon, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -14,14 +12,31 @@ import toast from 'react-hot-toast';
 
 const ServiceDetails = () => {
   const { id } = useParams();
-  const service = services.find((s) => s.id === parseInt(id));
-  const currentService = service || services[0];
-  const { details } = currentService;
+  const [currentService, setCurrentService] = useState(null);
+  const [allServices, setAllServices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const captchaRef = useRef(null);
 
   // --- FORM LOGIC ---
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState('idle');
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchServiceById(id),
+      fetchServices()
+    ])
+    .then(([detailRes, listRes]) => {
+      setCurrentService(detailRes.data);
+      setAllServices(listRes.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching service details:", err);
+      setLoading(false);
+    });
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,13 +58,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            service_interest: currentService.title, // Track which service they were looking at
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase contact_messages log removed ---
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -90,12 +99,31 @@ if (!token) {
     }
   };
 
+  if (loading) {
+      return (
+          <div className="pt-40 pb-20 flex justify-center">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+          </div>
+      );
+  }
+
+  if (!currentService) {
+      return (
+          <div className="pt-40 pb-20 text-center">
+              <h2 className="text-2xl font-bold text-gray-400">Service not found.</h2>
+              <Link to="/services" className="text-brand-rose font-bold mt-4 inline-block underline">Back to Services</Link>
+          </div>
+      );
+  }
+
+  const { details } = currentService;
+
   return (
     <div className="pt-20">
         <SEO 
-    title={`${service.title} Services | Nexora Creative Solutions`}
-    description={`Professional ${service.title} services in Kenya. We provide top-tier solutions in ${service.category || "technology"} tailored for your business needs.`}
-    url={`/services/${service.id}`}
+    title={`${currentService.title} Services | Nexora Creative Solutions`}
+    description={`Professional ${currentService.title} services in Kenya. We provide top-tier solutions in technology tailored for your business needs.`}
+    url={`/services/${currentService.id}`}
   />
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">
@@ -231,7 +259,7 @@ if (!token) {
                              <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
                              

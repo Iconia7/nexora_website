@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { benefits, jobs } from '../data';
+import React, { useState, useEffect } from 'react';
+import { fetchJobs, fetchBenefits } from '../api';
 import { CheckCircle, Briefcase, MapPin, Clock, ArrowRight, Heart, Globe, Coffee, Users, X, Loader2, CheckCircle as CheckIcon, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom'; 
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png'; 
 import SEO from '../components/SEO';
@@ -26,6 +24,10 @@ const staggerContainer = {
 };
 
 const Careers = () => {
+  const [jobs, setJobs] = useState([]);
+  const [benefits, setBenefits] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   // --- APPLICATION FORM STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState('');
@@ -33,6 +35,23 @@ const Careers = () => {
   const [status, setStatus] = useState('idle');
 
   const captchaRef = useRef(null);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchJobs(),
+      fetchBenefits()
+    ])
+    .then(([jobsRes, benefitsRes]) => {
+      setJobs(jobsRes.data);
+      setBenefits(benefitsRes.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching careers data:", err);
+      setLoading(false);
+    });
+  }, []);
 
   // Open Modal
   const openApplication = (position) => {
@@ -69,13 +88,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "job_applications"), {
-            ...formData,
-            position: selectedPosition,
-            timestamp: serverTimestamp(),
-            status: 'New' 
-        });
+        // --- NOTE: Firebase job_applications log removed ---
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -114,6 +127,14 @@ if (!token) {
         toast.error("Something went wrong. Please try again.");
     }
   };
+
+  if (loading) {
+      return (
+          <div className="pt-40 pb-20 flex justify-center">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+          </div>
+      );
+  }
 
   return (
     <div className="pt-20">
@@ -342,7 +363,7 @@ if (!token) {
                        <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
 

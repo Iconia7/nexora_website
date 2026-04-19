@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
-import { servicePricing } from '../data';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { fetchPricing, initiateStkPush, checkOrderStatus } from '../api';
 import { Check, X, Smartphone, CreditCard, FileText, Loader2, CheckCircle, AlertCircle, Copy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -17,38 +14,57 @@ import { usePaystackPayment } from 'react-paystack';
 
 const Pricing = () => {
   // --- STATE MANAGEMENT ---
-  const [activeCategory, setActiveCategory] = useState("Website Development");
-  const [selectedPlan, setSelectedPlan] = useState(null); // Stores the plan user clicked
+  const [pricingData, setPricingData] = useState({});
+  const [activeCategory, setActiveCategory] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('mpesa'); // 'mpesa', 'invoice', 'visa'
-  const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('mpesa'); 
+  const [loading, setLoading] = useState(true);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   const captchaRef = useRef(null);
   
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', mpesaCode: '' });
-  const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
+  const [status, setStatus] = useState('idle'); 
 
-  // --- PAYSTACK CONFIGURATION ---
-  // Go to Paystack Dashboard > Settings > API Keys & Webhooks to get this
-    const onPaystackSuccess = (reference) => {
-      // reference object contains { message, reference, status, trans }
+  useEffect(() => {
+    setLoading(true);
+    fetchPricing()
+    .then(res => {
+      // Group pricing by category
+      const grouped = res.data.reduce((acc, current) => {
+        if (!acc[current.category]) acc[current.category] = [];
+        acc[current.category].push(current);
+        return acc;
+      }, {});
+      setPricingData(grouped);
+      if (Object.keys(grouped).length > 0) {
+        setActiveCategory(Object.keys(grouped)[0]);
+      }
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching pricing:", err);
+      setLoading(false);
+    });
+  }, []);
+
+  const onPaystackSuccess = (reference) => {
       finalizeOrder("Paid via Card", reference.reference, "card");
   };
 
   const onPaystackClose = () => {
       toast("Payment window closed.");
-      setLoading(false);
+      setOrderLoading(false);
   };
 
   const PAYSTACK_PAGE_LINK = "https://paystack.shop/pay/x259a1rre3";
-  const PAYSTACK_PUBLIC_KEY = "pk_live_6cdd6363ff6f142ba84eb1cd87d1117f41c8c2fc"; // Replace with your key
+  const PAYSTACK_PUBLIC_KEY = "pk_live_6cdd6363ff6f142ba84eb1cd87d1117f41c8c2fc"; 
 
   const paystackConfig = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
-    // Paystack uses Kobo (Cents). So 100 KES = 10000. 
-    // We remove commas and multiply by 100.
-    amount: selectedPlan ? parseInt(selectedPlan.price.replace(/,/g, '')) * 100 : 0, 
+    amount: selectedPlan ? parseInt(String(selectedPlan.price).replace(/,/g, '')) * 100 : 0, 
     publicKey: PAYSTACK_PUBLIC_KEY,
     currency: "KES",
   };
@@ -60,19 +76,16 @@ const Pricing = () => {
         toast.error("Please fill contact details first.");
         return;
       }
-      setLoading(true);
+      setOrderLoading(true);
       initializePayment(onPaystackSuccess, onPaystackClose);
   };
 
-  // Open Modal
-const handleSelectPlan = (plan) => {
-    setSelectedPlan({ ...plan, category: activeCategory }); // Track which service they picked
+  const handleSelectPlan = (plan) => {
+    setSelectedPlan({ ...plan }); 
     setIsModalOpen(true);
     setStatus('idle');
   };
 
-// --- PDF GENERATOR (Updated with International Instructions) ---
-// --- PDF GENERATOR (Fixed Layout) ---
 const generatePDF = (docType, paymentDetails) => {
     const doc = new jsPDF();
     const date = new Date().toLocaleDateString();
@@ -130,7 +143,7 @@ const generatePDF = (docType, paymentDetails) => {
 
     doc.setFont("helvetica", "normal");
     doc.text(`${selectedPlan.plan} (${selectedPlan.category})`, 20, 115);
-    doc.text(selectedPlan.price, 160, 115);
+    doc.text(String(selectedPlan.price), 160, 115);
     
     if(isReceipt) {
         doc.setFontSize(9);
@@ -191,7 +204,6 @@ const generatePDF = (docType, paymentDetails) => {
     return doc;
 };
 
-  // Close Modal
   const closeModal = () => {
     setIsModalOpen(false);
     setFormData({ name: '', email: '', phone: '', mpesaCode: '' });
@@ -204,34 +216,29 @@ const generatePDF = (docType, paymentDetails) => {
   const handleInvoice = (e) => {
       e.preventDefault();
 
-      // 1. Validate Inputs
       if (!formData.name || !formData.email || !formData.phone) {
           toast.error("Please fill in your contact details first.");
           return;
       }
 
-      // 2. Validate Captcha (Optional for Invoice, but good for anti-spam)
       const token = captchaRef.current.getValue();
       if (!token) {
          toast.error("Please verify that you are not a robot 🤖");
          return;
       }
 
-      // 3. Process
-      setLoading(true);
+      setOrderLoading(true);
       finalizeOrder("Pending Invoice", "N/A", "invoice");
   };
 
   const handleMpesaPay = async (e) => {
     e.preventDefault();
 
-    // 1. Validate Inputs
     if (!formData.name || !formData.email || !formData.phone) {
         toast.error("Please fill in your contact details first.");
         return;
     }
     
-    // 2. Validate Captcha
     const token = captchaRef.current.getValue();
     if (!token) {
        toast.error("Please verify that you are not a robot 🤖");
@@ -244,40 +251,34 @@ const generatePDF = (docType, paymentDetails) => {
         return;
     }
 
-    setLoading(true);
-    const cleanPrice = parseInt(selectedPlan.price.replace(/,/g, ''));
+    setOrderLoading(true);
+    const cleanPrice = parseInt(String(selectedPlan.price).replace(/,/g, ''));
     const accountRefName = selectedPlan.plan.substring(0, 12);
 
     try {
-        // 3. Trigger STK Push
-        // We use the same API route as the shop!
-        const res = await axios.post('/api/stkpush', {
+        const res = await initiateStkPush({
             phone: formData.phone,
             amount: cleanPrice,
-            item: { name: selectedPlan.plan }, // Pass the Plan Name as the item
-            size: selectedPlan.period,
+            plan_name: selectedPlan.plan,
             accountRef: accountRefName
         });
 
         if (res.data.ResponseCode === "0") {
             toast.success(`STK Push sent to ${formData.phone}. Enter PIN!`);
-            
-            // 4. Start Polling for Payment Confirmation
             const checkoutID = res.data.CheckoutRequestID;
             pollPaymentStatus(checkoutID);
         } else {
             toast.error("STK Push Failed: " + res.data.errorMessage);
-            setLoading(false);
+            setOrderLoading(false);
         }
 
     } catch (error) {
         console.error(error);
         toast.error("Payment System Error. Try again.");
-        setLoading(false);
+        setOrderLoading(false);
     }
   };
 
-  // --- NEW: POLL STATUS (Check if they paid) ---
   const pollPaymentStatus = async (checkoutID) => {
     let attempts = 0;
     const maxAttempts = 20;
@@ -285,55 +286,42 @@ const generatePDF = (docType, paymentDetails) => {
     const interval = setInterval(async () => {
         attempts++;
         try {
-            const res = await axios.post('/api/query', { checkoutRequestID: checkoutID });
+            const res = await checkOrderStatus(checkoutID);
             
-            if (res.data.ResultCode === "0") {
+            if (res.data.status === "COMPLETED") {
                 clearInterval(interval);
-                // Payment Success! Now save the order to Firebase
-                await finalizeOrder("Paid via M-Pesa", res.data.CheckoutRequestID);
-            } else if (['1032', '1'].includes(res.data.ResultCode)) {
+                await finalizeOrder("Paid via M-Pesa", res.data.checkout_request_id);
+            } else if (res.data.status === "FAILED") {
                  clearInterval(interval);
-                 toast.error("Payment Cancelled by user.");
-                 setLoading(false);
+                 toast.error("Payment failed or cancelled.");
+                 setOrderLoading(false);
             }
         } catch (err) { console.log("Polling..."); }
 
         if (attempts >= maxAttempts) {
             clearInterval(interval);
             toast.error("Payment Timeout. Please try again.");
-            setLoading(false);
+            setOrderLoading(false);
         }
     }, 3000);
   };
 
 const finalizeOrder = async (paymentStatus, receiptRef = "N/A", methodUsed = "mpesa") => {
       try {
-        // 1. Generate PDF (Data URI)
+        // --- NOTE: Firebase order log removed ---
+
         const isPaid = paymentStatus.includes("Paid");
         const docType = isPaid ? "Receipt" : "Invoice";
         const refNumber = isPaid ? receiptRef : `INV-${Math.floor(Math.random() * 10000)}`;
 
-        // 1. Generate PDF
         const pdfDoc = generatePDF(docType, { 
             ref: refNumber, 
             mpesaCode: receiptRef,
             method: methodUsed
         });
 
-        // 2. Auto-Download for User
         pdfDoc.save(`Nexora_${docType}_${selectedPlan.plan.replace(/\s/g, '_')}.pdf`);
-        // 2. Save to Firebase
-        await addDoc(collection(db, "orders"), {
-            customer: formData,
-            plan: selectedPlan,
-            method: methodUsed,
-            amount: selectedPlan.price,
-            status: paymentStatus,
-            mpesaReceipt: receiptRef,
-            timestamp: serverTimestamp()
-        });
 
-        // 3. Prepare Email
         const emailSubject = isPaid ? "Payment Receipt" : "Invoice Generated";
 
         let emailMessage = "";
@@ -347,7 +335,7 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A", methodUsed = "mp
             `--- HOW TO PAY ---\n` +
             `OPTION 1 (M-PESA): Paybill 4041463, Account: ${selectedPlan.plan}\n\n` +
             `OPTION 2 (CARD/INTERNATIONAL): Click here to pay securely:\n` +
-            `${PAYSTACK_PAGE_LINK}\n\n` + // <--- LINK ADDED HERE
+            `${PAYSTACK_PAGE_LINK}\n\n` + 
             `Please make payment within 24 hours to begin the project.`;
         }
 
@@ -369,16 +357,15 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A", methodUsed = "mp
             emailjs.send("service_nhwsclu", "template_61eywtf", clientParams, "ctUKvg88_0Th5sfKn")
         ]);
 
-        
         setStatus('success');
         toast.success(paymentMethod === 'mpesa' ? "Payment Confirmed! Receipt Downloaded." : "Invoice Generated & Downloaded!");
         setTimeout(() => closeModal(), 5000);
-        setLoading(false);
+        setOrderLoading(false);
 
       } catch (error) {
           console.error("Save Error", error);
           toast.error("Order saved, check your email but PDF generation failed.");
-          setLoading(false);
+          setOrderLoading(false);
       }
   };
 
@@ -405,7 +392,7 @@ return (
       {/* 2. Category Filter (Tabs) */}
       <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-20">
         <div className="bg-white p-2 rounded-2xl shadow-xl flex flex-wrap justify-center gap-2 border border-gray-100">
-           {Object.keys(servicePricing).map((category) => (
+           {Object.keys(pricingData).map((category) => (
              <button
                key={category}
                onClick={() => setActiveCategory(category)}
@@ -430,7 +417,7 @@ return (
             transition={{ duration: 0.4 }}
             className="grid md:grid-cols-3 gap-8"
         >
-          {servicePricing[activeCategory]?.map((plan, idx) => (
+          {pricingData[activeCategory]?.map((plan, idx) => (
             <div 
               key={idx} 
               className={`relative p-8 rounded-3xl transition-all duration-300 flex flex-col ${
@@ -481,7 +468,7 @@ return (
         </motion.div>
         
         {/* Fallback if category empty */}
-        {(!servicePricing[activeCategory] || servicePricing[activeCategory].length === 0) && (
+        {(!pricingData[activeCategory] || pricingData[activeCategory].length === 0) && (
             <div className="text-center py-20">
                 <p className="text-gray-400">Custom pricing available on request for this service.</p>
                 <Link to="/contact" className="text-brand-rose font-bold hover:underline">Contact Us</Link>
@@ -539,7 +526,12 @@ return (
                                 {paymentMethod === 'card' && <p className="text-xs text-center text-gray-500">Secure Visa/Mastercard payment via Paystack.</p>}
                             </div>
 
-                            <div className="flex justify-center mb-4"><ReCAPTCHA ref={captchaRef} sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN" /></div>
+                            <div className="flex justify-center mb-4">
+                                <ReCAPTCHA
+                                    ref={captchaRef}
+                                    sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                                />
+                            </div>
 
                             {/* ACTION BUTTON */}
                             {paymentMethod === 'mpesa' && (

@@ -1,5 +1,4 @@
-import React from 'react';
-import { team } from '../data';
+import { fetchTeamMembers, fetchStats } from '../api';
 import { Play, Trophy, Users, Target, Heart, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom'; 
@@ -26,6 +25,38 @@ const scaleUp = {
 };
 
 const About = () => {
+  const [team, setTeam] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchTeamMembers(), fetchStats()])
+    .then(([teamRes, statsRes]) => {
+      setTeam(teamRes.data);
+      setStats(statsRes.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching about page data:", err);
+      setLoading(false);
+    });
+  }, []);
+
+  // Fallback stats
+  const displayStats = stats.length > 0 ? stats : [
+    { value: "200+", label: "Happy Clients" },
+    { value: "50+", label: "Projects Done" },
+    { value: "5+", label: "Years Experience" }
+  ];
+
+  if (loading) {
+      return (
+          <div className="pt-40 pb-20 flex justify-center">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+          </div>
+      );
+  }
+
   return (
     <div className="pt-20 overflow-hidden">
        <SEO 
@@ -143,18 +174,12 @@ const About = () => {
                   
                   {/* Floating Stats Bottom */}
                   <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-8 z-20 flex justify-around text-white">
-                        <div className="text-center">
-                            <h3 className="text-3xl font-bold">200+</h3>
-                            <p className="text-sm opacity-80">Happy Clients</p>
-                        </div>
-                        <div className="text-center">
-                            <h3 className="text-3xl font-bold">50+</h3>
-                            <p className="text-sm opacity-80">Projects Done</p>
-                        </div>
-                        <div className="text-center">
-                            <h3 className="text-3xl font-bold">5+</h3>
-                            <p className="text-sm opacity-80">Years Experience</p>
-                        </div>
+                        {displayStats.slice(0, 3).map((stat, idx) => (
+                            <div key={idx} className="text-center">
+                                <h3 className="text-3xl font-bold">{stat.value}</h3>
+                                <p className="text-sm opacity-80">{stat.label}</p>
+                            </div>
+                        ))}
                   </div>
               </motion.div>
           </div>

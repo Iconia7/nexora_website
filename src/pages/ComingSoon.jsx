@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Facebook, Twitter, Linkedin, Instagram, Loader2, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // Import Firestore functions
-import emailjs from '@emailjs/browser'; // Import EmailJS
-import { db } from '../firebase.js'; // Import your Firebase DB config
+import emailjs from '@emailjs/browser';
+import { subscribeNewsletter } from '../api';
 import picture from '../assets/newton.jpeg';
 import Logo from '../assets/NCS_Secondary_Logo.png'; 
 
@@ -57,12 +56,8 @@ const ComingSoon = () => {
     setMessage('');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "subscribers"), {
-            email: email,
-            timestamp: serverTimestamp(),
-            source: 'Coming Soon Page'
-        });
+        // 1. Save to Backend API
+        await subscribeNewsletter(email);
 
         // 2. Send Email via EmailJS
         // REPLACE WITH YOUR ACTUAL KEYS FROM EMAILJS DASHBOARD

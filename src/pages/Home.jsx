@@ -1,10 +1,10 @@
-import React from 'react';
-import { services } from '../data';
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { fetchServices, fetchStats } from '../api';
+import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
+import LucideIcon from '../components/LucideIcon';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
@@ -22,6 +22,31 @@ const staggerContainer = {
 };
 
 const Home = () => {
+  const [services, setServices] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchServices(), fetchStats()])
+      .then(([servicesRes, statsRes]) => {
+        setServices(servicesRes.data);
+        setStats(statsRes.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching homepage data:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Fallback stats if backend is empty
+  const displayStats = stats.length > 0 ? stats : [
+    { value: "200+", label: "Happy Clients" },
+    { value: "50+", label: "Projects Done" },
+    { value: "10+", label: "Team Members" },
+    { value: "5+", label: "Years Experience" }
+  ];
+
   return (
     <div className="pt-20 overflow-hidden">
         <SEO 
@@ -140,18 +165,13 @@ const Home = () => {
             variants={staggerContainer}
             className="flex flex-wrap justify-center md:justify-between gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-gray-700/50"
           >
-            {[
-              { num: "200+", label: "Happy Clients" },
-              { num: "50+", label: "Projects Done" },
-              { num: "10+", label: "Team Members" },
-              { num: "5+", label: "Years Experience" }
-            ].map((stat, idx) => (
+            {displayStats.map((stat, idx) => (
               <motion.div variants={fadeInUp} key={idx} className="flex-1 pt-8 md:pt-0 px-4">
                 <motion.h3 
                   whileHover={{ scale: 1.2, color: "#fff" }}
                   className="text-5xl font-extrabold text-brand-rose mb-2 cursor-default font-creative"
                 >
-                  {stat.num}
+                  {stat.value}
                 </motion.h3>
                 <p className="text-gray-300 font-medium text-lg">{stat.label}</p>
               </motion.div>
@@ -173,35 +193,41 @@ const Home = () => {
             <h2 className="text-4xl font-bold text-brand-charcoal mt-3 mb-4">Services We Provide</h2>
           </motion.div>
           
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {services.slice(0, 3).map((service) => (
-              <motion.div 
-                key={service.id} 
-                variants={fadeInUp}
-                whileHover={{ y: -10 }}
-                className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group border border-gray-100"
-              >
+          {loading ? (
+            <div className="flex justify-center p-20">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+            </div>
+          ) : (
+            <motion.div 
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+              className="grid md:grid-cols-3 gap-8"
+            >
+              {services.slice(0, 3).map((service) => (
                 <motion.div 
-                  whileHover={{ rotate: 360, backgroundColor: "#03045E", color: "#fff" }}
-                  transition={{ duration: 0.6 }}
-                  className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-brand-rose mb-6 shadow-sm"
+                  key={service.id} 
+                  variants={fadeInUp}
+                  whileHover={{ y: -10 }}
+                  className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group border border-gray-100"
                 >
-                  {service.icon}
+                  <motion.div 
+                    whileHover={{ rotate: 360, backgroundColor: "#03045E", color: "#fff" }}
+                    transition={{ duration: 0.6 }}
+                    className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-brand-rose mb-6 shadow-sm"
+                  >
+                    <LucideIcon name={service.icon} size={24} />
+                  </motion.div>
+                  <h3 className="text-xl font-bold mb-4 text-brand-charcoal">{service.title}</h3>
+                  <p className="text-gray-600 mb-8 leading-relaxed line-clamp-3">{service.description}</p>
+                  <Link to={`/services/${service.id}`} className="text-brand-rose font-bold flex items-center gap-2 hover:gap-4 transition-all">
+                    Read More <ArrowRight size={18}/>
+                  </Link>
                 </motion.div>
-                <h3 className="text-xl font-bold mb-4 text-brand-charcoal">{service.title}</h3>
-                <p className="text-gray-600 mb-8 leading-relaxed">{service.desc}</p>
-                <a href="/services" className="text-brand-rose font-bold flex items-center gap-2 hover:gap-4 transition-all">
-                  Read More <ArrowRight size={18}/>
-                </a>
-              </motion.div>
-            ))}
-          </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
 

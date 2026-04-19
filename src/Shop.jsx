@@ -4,120 +4,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MpesaModal from './MpesaModal';
 import SEO from './components/SEO';
-import { db } from './firebase';
-import { collection, query, getDocs, where } from 'firebase/firestore';
-
-// --- INVENTORY DATA ---
-const MERCH = [
-  {
-    id: 1,
-    name: "Nexora 'Source Code' Hoodie (White)",
-    price: 2800, 
-    image: "/images/White.png", 
-    tag: "Heavyweight Cotton",
-    shipsIn: "3-5 Days",
-    sizes: ["M", "L", "XL", "XXL"]
-  },
-   {
-    id: 2, // Fixed ID
-    name: "Nexora 'Source Code' Hoodie (Black)",
-    price: 2800, 
-    image: "/images/Black.png", 
-    tag: "Heavyweight Cotton",
-    shipsIn: "3-5 Days",
-    sizes: ["M", "L", "XL", "XXL"]
-  },
-   {
-    id: 3, // Fixed ID
-    name: "Nexora 'Source Code' Hoodie (Beige)",
-    price: 2800, 
-    image: "/images/Beige.png", 
-    tag: "Heavyweight Cotton",
-    shipsIn: "3-5 Days",
-    sizes: ["M", "L", "XL", "XXL"]
-  },
-  {
-    id: 4, // Fixed ID
-    name: "Nexora 'Source Code' Hoodie (Burgundy)",
-    price: 2800, 
-    image: "/images/Burgundy.png", 
-    tag: "Heavyweight Cotton",
-    shipsIn: "3-5 Days",
-    sizes: ["M", "L", "XL", "XXL"]
-  },
-  {
-    id: 5,
-    name: "Agency Sweatshirt (Burgundy)",
-    price: 2000,
-    image: "/images/Burgundy_sweat.png",
-    tag: "Limited Drop",
-    shipsIn: "3-5 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 6,
-    name: "Agency Sweatshirt (White)",
-    price: 2000,
-    image: "/images/White_sweat.png",
-    tag: "Limited Drop",
-    shipsIn: "3-5 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 7,
-    name: "Agency Sweatshirt (Beige)",
-    price: 2000,
-    image: "/images/Beige_sweat.png",
-    tag: "Limited Drop",
-    shipsIn: "3-5 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 8,
-    name: "Agency Sweatshirt (Black)",
-    price: 2000,
-    image: "/images/Black_sweat.png",
-    tag: "Limited Drop",
-    shipsIn: "3-5 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 9,
-    name: "Nexora Developer Tee (White)",
-    price: 750,
-    image: "/images/White_tee.png",
-    tag: "Essential",
-    shipsIn: "2 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 10, // Fixed ID
-    name: "Nexora Developer Tee (Black)",
-    price: 750,
-    image: "/images/Black_tee.png",
-    tag: "Essential",
-    shipsIn: "2 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 11, // Fixed ID
-    name: "Nexora Developer Tee (Beige)",
-    price: 750,
-    image: "/images/Beige_tee.png",
-    tag: "Essential",
-    shipsIn: "2 Days",
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 12, // Fixed ID
-    name: "Nexora Developer Tee (Burgundy)",
-    price: 750,
-    image: "/images/Burgundy_tee.png",
-    tag: "Essential",
-    shipsIn: "2 Days",
-    sizes: ["S", "M", "L", "XL"]
-  }
-];
+import { fetchProducts } from './api';
 
 const ProductCard = ({ item, index, onBuy }) => {
   const [mySize, setMySize] = useState(""); // <--- Only affects THIS card
@@ -148,7 +35,7 @@ const ProductCard = ({ item, index, onBuy }) => {
            className="w-full h-64 object-contain mix-blend-multiply" 
          />
          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur border border-gray-200 text-xs font-bold px-3 py-1 rounded-full text-brand-charcoal">
-           {item.tag}
+           {item.tag || 'New Drop'}
          </div>
       </div>
 
@@ -159,16 +46,16 @@ const ProductCard = ({ item, index, onBuy }) => {
           </div>
           
           <div className="flex justify-between items-center mb-4">
-               <span className="text-2xl font-black text-brand-rose">Ksh {item.price.toLocaleString()}</span>
+               <span className="text-2xl font-black text-brand-rose">Ksh {parseFloat(item.price).toLocaleString()}</span>
                <p className="text-xs text-gray-400 flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
-                  <Clock size={12}/> {item.shipsIn}
+                  <Clock size={12}/> {item.ships_in || '3-5 Days'}
                </p>
           </div>
 
           {/* Size Selector - Uses 'mySize' specific to this card */}
           <p className="text-xs font-bold text-gray-400 uppercase mb-2">Select Size</p>
           <div className="flex flex-wrap gap-2 mb-6">
-            {item.sizes.map(size => (
+            {(item.sizes || ["S", "M", "L", "XL", "XXL"]).map(size => (
               <button
                 key={size}
                 onClick={() => setMySize(size)}
@@ -249,7 +136,7 @@ const handleWhatsApp = () => {
         <div className="p-8 space-y-6">
           <div className="text-center border-b border-gray-100 pb-6">
             <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Paid</p>
-            <p className="text-4xl font-black text-brand-charcoal">KES {item.price.toLocaleString()}</p>
+            <p className="text-4xl font-black text-brand-charcoal">KES {parseFloat(item.price).toLocaleString()}</p>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
@@ -296,23 +183,18 @@ export default function Shop({ onBack }) {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const loadInventory = async () => {
       try {
-        const q = query(collection(db, "products"), where("active", "==", true));
-        const snapshot = await getDocs(q);
-        const dynamicProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // If Firestore has products, use them, otherwise use the hardcoded fallback
-        setProducts(dynamicProducts.length > 0 ? dynamicProducts : MERCH);
+        const res = await fetchProducts();
+        setProducts(res.data);
       } catch (error) {
         console.error("Error fetching products:", error);
-        setProducts(MERCH); // Fallback
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    loadInventory();
   }, []);
 
   // This function is passed down to every ProductCard

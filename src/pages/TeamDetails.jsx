@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { team } from '../data';
+import { fetchTeamMemberById, fetchTeamMembers } from '../api';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, Briefcase, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -14,12 +12,26 @@ import toast from 'react-hot-toast';
 
 const TeamDetails = () => {
   const { id } = useParams();
-  const member = team.find(m => m.id === parseInt(id));
+  const [member, setMember] = useState(null);
+  const [loading, setLoading] = useState(true);
   const captchaRef = useRef(null);
 
   // --- FORM STATE LOGIC ---
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
+
+  useEffect(() => {
+    setLoading(true);
+    fetchTeamMemberById(id)
+    .then(res => {
+      setMember(res.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching team member:", err);
+      setLoading(false);
+    });
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -42,13 +54,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            target: `Direct Message to ${member.name}`, // Tag it as a direct message
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase contact_messages log removed ---
 
         // 2. EmailJS Configuration
         const serviceID = "service_nhwsclu"; 
@@ -91,7 +97,15 @@ if (!token) {
     }
   };
 
-  if (!member) return <div className="pt-40 text-center">Member not found</div>;
+  if (loading) {
+      return (
+          <div className="pt-40 pb-20 flex justify-center">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+          </div>
+      );
+  }
+
+  if (!member) return <div className="pt-40 text-center text-2xl font-bold text-gray-400">Member not found</div>;
 
   const SocialIconMap = {
       facebook: Facebook,
@@ -243,7 +257,7 @@ if (!token) {
                                <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
                                 <div className="md:col-span-2">

@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { blogs } from '../data';
-import { Search, Calendar, User, ArrowRight, ChevronRight, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { fetchBlogs } from '../api';
+import { Search, Calendar, User, ArrowRight, ChevronRight, Loader2, CheckCircle, AlertCircle, CheckIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -18,6 +16,8 @@ const fadeInUp = {
 };
 
 const Blogs = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -26,6 +26,18 @@ const Blogs = () => {
   const [status, setStatus] = useState('idle');
 
     const captchaRef = useRef(null);
+
+  useEffect(() => {
+    fetchBlogs()
+      .then(res => {
+        setBlogs(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching blogs:", err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,13 +59,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            message: "Lead from Blog Sidebar", 
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase log removed ---
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -131,51 +137,61 @@ if (!token) {
           
           {/* 2. Main Content: Blog List */}
           <div className="lg:col-span-2 space-y-12">
-             {filteredBlogs.length > 0 ? (
-                filteredBlogs.map((blog) => (
-                    <motion.div 
-                        key={blog.id} 
-                        initial="hidden" 
-                        whileInView="visible" 
-                        viewport={{ once: true }} 
-                        variants={fadeInUp}
-                        className="group"
-                    >
-                        <div className="overflow-hidden rounded-2xl h-[300px] mb-6 relative">
-                            <img src={blog.image} alt={blog.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                            <div className="absolute top-4 left-4 bg-brand-rose text-white text-xs font-bold px-3 py-1 rounded-full">
-                                {blog.category}
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                            <span className="flex items-center gap-1"><Calendar size={14} className="text-brand-rose"/> {blog.date}</span>
-                            <span className="flex items-center gap-1"><User size={14} className="text-brand-rose"/> {blog.author}</span>
-                        </div>
-
-                        <h2 className="text-2xl font-bold text-brand-charcoal mb-3 group-hover:text-brand-rose transition-colors">
-                            <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
-                        </h2>
-                        <p className="text-gray-600 mb-4 line-clamp-2">{blog.excerpt}</p>
-                        
-                        <Link to={`/blogs/${blog.id}`} className="inline-flex items-center gap-2 text-brand-charcoal font-bold hover:text-brand-rose transition">
-                            Read More <ArrowRight size={18}/>
-                        </Link>
-                    </motion.div>
-                ))
-             ) : (
-                 <div className="text-center py-20">
-                     <h3 className="text-xl font-bold text-gray-400">No blogs found matching your criteria.</h3>
+             {loading ? (
+                 <div className="flex justify-center py-20">
+                     <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
                  </div>
+             ) : (
+                <>
+                {filteredBlogs.length > 0 ? (
+                    filteredBlogs.map((blog) => (
+                        <motion.div 
+                            key={blog.id} 
+                            initial="hidden" 
+                            whileInView="visible" 
+                            viewport={{ once: true }} 
+                            variants={fadeInUp}
+                            className="group"
+                        >
+                            <div className="overflow-hidden rounded-2xl h-[300px] mb-6 relative">
+                                <img src={blog.image} alt={blog.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                <div className="absolute top-4 left-4 bg-brand-rose text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    {blog.category}
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                                <span className="flex items-center gap-1"><Calendar size={14} className="text-brand-rose"/> {blog.date}</span>
+                                <span className="flex items-center gap-1"><User size={14} className="text-brand-rose"/> {blog.author}</span>
+                            </div>
+
+                            <h2 className="text-2xl font-bold text-brand-charcoal mb-3 group-hover:text-brand-rose transition-colors">
+                                <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
+                            </h2>
+                            <p className="text-gray-600 mb-4 line-clamp-2">{blog.excerpt}</p>
+                            
+                            <Link to={`/blogs/${blog.id}`} className="inline-flex items-center gap-2 text-brand-charcoal font-bold hover:text-brand-rose transition">
+                                Read More <ArrowRight size={18}/>
+                            </Link>
+                        </motion.div>
+                    ))
+                ) : (
+                    <div className="text-center py-20">
+                        <h3 className="text-xl font-bold text-gray-400">No blogs found matching your criteria.</h3>
+                    </div>
+                )}
+                </>
              )}
              
-             {/* Pagination (Static) */}
-             <div className="flex gap-2 pt-10">
-                <button className="w-10 h-10 rounded-full bg-brand-rose text-white font-bold">1</button>
-                <button className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">2</button>
-                <button className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">3</button>
-                <button className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200"><ChevronRight size={18}/></button>
-             </div>
+             {/* Pagination (Static for now) */}
+             {!loading && filteredBlogs.length > 0 && (
+                <div className="flex gap-2 pt-10">
+                    <button className="w-10 h-10 rounded-full bg-brand-rose text-white font-bold">1</button>
+                    <button className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">2</button>
+                    <button className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">3</button>
+                    <button className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200"><ChevronRight size={18}/></button>
+                </div>
+             )}
           </div>
 
           {/* 3. Sidebar */}
@@ -253,7 +269,7 @@ if (!token) {
                       <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
                       <button 

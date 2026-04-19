@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { projects } from '../data'; 
-import { ArrowRight, ExternalLink, Github, Star, GitFork, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { fetchProjects } from '../api'; 
+import { ArrowRight, ExternalLink, Github, Star, GitFork, Loader2, CheckCircle, AlertCircle, Globe, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import newton from '../assets/newton.jpeg';
@@ -16,12 +14,56 @@ import toast from 'react-hot-toast';
 const Projects = () => {
   const [filter, setFilter] = useState('All');
   const [githubRepos, setGithubRepos] = useState([]);
+  const [apiProjects, setApiProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const captchaRef = useRef(null);
   
   // --- FORM LOGIC ---
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [status, setStatus] = useState('idle');
+
+  useEffect(() => {
+    // 1. Fetch API Projects
+    const loadProjects = async () => {
+      try {
+        const res = await fetchProjects();
+        setApiProjects(res.data);
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+      }
+    };
+
+    // 2. Fetch GitHub Repos
+    const fetchRepos = async () => {
+      try {
+        const response = await fetch('https://api.github.com/users/Iconia7/repos?sort=updated&per_page=6');
+        const data = await response.json();
+        
+        const formattedRepos = data.map(repo => ({
+          id: `gh-${repo.id}`, 
+          title: repo.name.replace(/-/g, ' ').toUpperCase(),
+          category: 'GitHub',
+          image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80",
+          description: repo.description || "No description provided.",
+          link: repo.html_url,
+          isExternal: true,
+          stars: repo.stargazers_count,
+          forks: repo.forks_count,
+          language: repo.language
+        }));
+
+        setGithubRepos(formattedRepos);
+      } catch (error) {
+        console.error("Error fetching GitHub repos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+    fetchRepos();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,13 +85,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            message: "Lead from Projects Page Banner", 
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase log removed ---
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -90,35 +126,7 @@ if (!token) {
     }
   };
 
-  // 1. Fetch GitHub Repos
-  useEffect(() => {
-    const fetchRepos = async () => {
-      try {
-        const response = await fetch('https://api.github.com/users/Iconia7/repos?sort=updated&per_page=6');
-        const data = await response.json();
-        
-        const formattedRepos = data.map(repo => ({
-          id: `gh-${repo.id}`, 
-          title: repo.name.replace(/-/g, ' ').toUpperCase(),
-          category: 'GitHub',
-          image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80",
-          description: repo.description || "No description provided.",
-          link: repo.html_url,
-          isExternal: true,
-          stars: repo.stargazers_count,
-          forks: repo.forks_count,
-          language: repo.language
-        }));
-
-        setGithubRepos(formattedRepos);
-      } catch (error) {
-        console.error("Error fetching GitHub repos:", error);
-      }
-    };
-    fetchRepos();
-  }, []);
-
-  const allProjects = [...projects, ...githubRepos];
+  const allProjects = [...apiProjects, ...githubRepos];
   const categories = ['All', 'Web Design', 'Mobile App', 'UI/UX', 'GitHub'];
 
   const filteredProjects = filter === 'All' 
@@ -198,6 +206,23 @@ if (!token) {
                         >
                             <span className="text-brand-rose font-bold uppercase tracking-wider text-xs mb-3 block">{project.category}</span>
                             <h3 className="text-2xl font-bold mb-4 line-clamp-2">{project.title}</h3>
+                            
+                            {/* NEW: Project Badges */}
+                            {!project.isExternal && (project.live_url || project.playstore_url) && (
+                                <div className="flex justify-center gap-3 mb-6">
+                                    {project.live_url && (
+                                        <div className="flex items-center gap-1.5 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/30">
+                                            <Globe size={12}/> LIVE SITE
+                                        </div>
+                                    )}
+                                    {project.playstore_url && (
+                                        <div className="flex items-center gap-1.5 bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/30">
+                                            <Smartphone size={12}/> APP STORE
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {project.isExternal && (
                                 <div className="flex justify-center gap-4 mb-6 text-sm text-gray-400">
                                     <span className="flex items-center gap-1"><Star size={14} className="text-yellow-400"/> {project.stars}</span>
@@ -218,7 +243,7 @@ if (!token) {
                     </div>
                 </div>
                 <div className="absolute bottom-4 right-4 bg-white p-3 rounded-full shadow-lg text-brand-charcoal group-hover:scale-0 transition-transform duration-300 z-10">
-                    {project.isExternal ? <Github size={20} /> : <ExternalLink size={20} />}
+                    {project.isExternal ? <Github size={20} /> : (project.playstore_url ? <Smartphone size={20}/> : (project.live_url ? <Globe size={20}/> : <ExternalLink size={20} />))}
                 </div>
               </motion.div>
             ))}
@@ -264,10 +289,10 @@ if (!token) {
                         />
                     </div>
                     <div className="flex justify-center mb-4">
-    <ReCAPTCHA
-        ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
-    />
+     <ReCAPTCHA
+         ref={captchaRef}
+         sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+     />
 </div>
                     <button 
                         type="submit"

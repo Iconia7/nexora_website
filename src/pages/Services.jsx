@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { services } from '../data';
+import React, { useState, useEffect } from 'react';
+import { fetchServices } from '../api';
 import { ArrowRight, Plus, Minus, HelpCircle, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
+import LucideIcon from '../components/LucideIcon';
 import { useRef } from 'react';
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from 'react-hot-toast';
@@ -18,12 +17,26 @@ const fadeInUp = {
 };
 
 const Services = () => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState(0);
   const captchaRef = useRef(null);
 
   // --- FORM LOGIC ---
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [status, setStatus] = useState('idle');
+
+  useEffect(() => {
+    fetchServices()
+      .then(res => {
+        setServices(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching services:", err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,13 +58,8 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            message: "Quick Quote Request from Services Page", // Default message since form has no textarea
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase contact_messages log removed to avoid errors since firebase.js was deleted ---
+        // You can add a Django API endpoint for this later if needed.
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -125,37 +133,43 @@ if (!token) {
       {/* 2. Services Grid */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {services.map((service) => (
-              <motion.div 
-                key={service.id} 
-                variants={fadeInUp}
-                whileHover={{ y: -10, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
-                className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group border border-gray-100"
-              >
+          {loading ? (
+            <div className="flex justify-center p-20">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+            </div>
+          ) : (
+            <motion.div 
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+              className="grid md:grid-cols-3 gap-8"
+            >
+              {services.map((service) => (
                 <motion.div 
-                  whileHover={{ rotateY: 180 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-16 h-16 bg-brand-rose/10 text-brand-rose rounded-xl flex items-center justify-center mb-6 text-2xl group-hover:bg-brand-rose group-hover:text-white"
+                  key={service.id} 
+                  variants={fadeInUp}
+                  whileHover={{ y: -10, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group border border-gray-100"
                 >
-                  <div className="group-hover:scale-x-[-1] transition-transform duration-0"> 
-                    {service.icon}
-                  </div>
+                  <motion.div 
+                    whileHover={{ rotateY: 180 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-16 h-16 bg-brand-rose/10 text-brand-rose rounded-xl flex items-center justify-center mb-6 text-2xl group-hover:bg-brand-rose group-hover:text-white"
+                  >
+                    <div className="group-hover:scale-x-[-1] transition-transform duration-0"> 
+                      <LucideIcon name={service.icon} />
+                    </div>
+                  </motion.div>
+                  <h3 className="text-2xl font-bold mb-4 text-brand-charcoal group-hover:text-brand-rose transition-colors">{service.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">{service.description}</p>
+                  <Link to={`/services/${service.id}`} className="flex items-center gap-2 text-brand-charcoal font-bold hover:text-brand-rose transition group-hover:gap-4">
+                    Learn More <ArrowRight size={18} />
+                  </Link>
                 </motion.div>
-                <h3 className="text-2xl font-bold mb-4 text-brand-charcoal group-hover:text-brand-rose transition-colors">{service.title}</h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">{service.desc}</p>
-                <Link to={`/services/${service.id}`} className="flex items-center gap-2 text-brand-charcoal font-bold hover:text-brand-rose transition group-hover:gap-4">
-                  Learn More <ArrowRight size={18} />
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
 
@@ -233,7 +247,7 @@ if (!token) {
                    <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
                    

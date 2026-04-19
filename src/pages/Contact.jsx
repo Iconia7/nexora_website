@@ -2,9 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Phone, Mail, Clock, MapPin, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
+import { submitContactMessage } from '../api';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
 import ReCAPTCHA from "react-google-recaptcha";
@@ -49,12 +48,8 @@ if (!token) {
   setStatus('loading');
 
   try {
-    // 1. Save to Firebase (No change)
-    await addDoc(collection(db, "contact_messages"), {
-      ...formData,
-      timestamp: serverTimestamp(),
-      read: false 
-    });
+    // 1. Save to Backend API
+    await submitContactMessage(formData);
 
     // 2. EmailJS Configuration
         const serviceID = import.meta.env.VITE_EMAILJS_SERVICE_ID; 

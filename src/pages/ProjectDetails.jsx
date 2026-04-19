@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { projects } from '../data';
-import { CheckCircle, ArrowRight, MapPin, Calendar, User, Star, Loader2, AlertCircle } from 'lucide-react';
+import { fetchProjectById, fetchProjects } from '../api';
+import { CheckCircle, ArrowRight, MapPin, Calendar, User, Star, Loader2, AlertCircle, Globe, Smartphone } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -19,13 +17,31 @@ const fadeInUp = {
 
 const ProjectDetails = () => {
   const { id } = useParams();
-  const project = projects.find((p) => p.id === parseInt(id));
-
+  const [project, setProject] = useState(null);
+  const [otherProjects, setOtherProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const captchaRef = useRef(null);
 
   // --- FORM LOGIC ---
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState('idle');
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetchProjectById(id),
+      fetchProjects()
+    ])
+    .then(([detailRes, listRes]) => {
+      setProject(detailRes.data);
+      setOtherProjects(listRes.data.filter(p => p.id !== detailRes.data.id).slice(0, 2));
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching project details:", err);
+      setLoading(false);
+    });
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,13 +63,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            project_interest: project.title, // Tag the specific project
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase contact_messages log removed ---
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -94,8 +104,15 @@ if (!token) {
     }
   };
 
-  // Fallback if project not found
-  if (!project) return <div className="pt-32 text-center text-2xl">Project not found</div>;
+  if (loading) {
+      return (
+          <div className="pt-40 pb-20 flex justify-center">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+          </div>
+      );
+  }
+
+  if (!project) return <div className="pt-40 text-center text-2xl font-bold text-gray-400">Project not found</div>;
 
   return (
     <div className="pt-20">
@@ -230,6 +247,37 @@ if (!token) {
                    </div>
                 </div>
 
+                {/* PROJECT LINKS */}
+                {(project.live_url || project.playstore_url) && (
+                    <div className="mt-8 pt-8 border-t border-gray-600 space-y-4">
+                        <h4 className="font-bold mb-4 text-brand-rose uppercase tracking-wider text-sm">Project Gallery</h4>
+                        
+                        {project.live_url && (
+                            <a 
+                                href={project.live_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="w-full bg-white text-brand-charcoal hover:bg-brand-rose hover:text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group"
+                            >
+                                <Globe size={20} className="group-hover:rotate-12 transition-transform" /> 
+                                Visit Live Website
+                            </a>
+                        )}
+
+                        {project.playstore_url && (
+                            <a 
+                                href={project.playstore_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="w-full bg-brand-rose text-white hover:bg-white hover:text-brand-charcoal font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group border-2 border-transparent hover:border-brand-rose"
+                            >
+                                <Smartphone size={20} className="group-hover:scale-110 transition-transform" /> 
+                                Available on Play Store
+                            </a>
+                        )}
+                    </div>
+                )}
+
                 {/* FUNCTIONAL "Start Similar Project" Form */}
                 <div className="mt-8 pt-8 border-t border-gray-600">
                    <h4 className="font-bold mb-4 text-brand-rose">Want a project like this?</h4>
@@ -262,7 +310,7 @@ if (!token) {
                        <div className="flex justify-center mb-4">
     <ReCAPTCHA
         ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
     />
 </div>
                        
@@ -294,7 +342,7 @@ if (!token) {
                <Link to="/projects" className="text-brand-rose font-bold flex items-center gap-2">View All <ArrowRight size={20}/></Link>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
-               {projects.filter(p => p.id !== project.id).slice(0, 2).map(p => (
+               {otherProjects.map(p => (
                    <Link to={`/projects/${p.id}`} key={p.id} className="group relative rounded-xl overflow-hidden h-[250px] shadow-lg">
                        <img src={p.image} alt={p.title} className="w-full h-full object-cover transition duration-500 group-hover:scale-110" />
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">

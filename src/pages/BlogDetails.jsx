@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { blogs } from '../data';
+import { fetchBlogById, fetchBlogs } from '../api';
 import { Calendar, Facebook, Twitter, Linkedin, Share2, ArrowRight, ChevronRight, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase'; 
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -14,12 +12,34 @@ import toast from 'react-hot-toast';
 
 const BlogDetails = () => {
   const { id } = useParams();
+  const [blog, setBlog] = useState(null);
+  const [otherBlogs, setOtherBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   // --- FORM LOGIC ---
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [status, setStatus] = useState('idle');
 
   const captchaRef = useRef(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setLoading(true);
+    
+    Promise.all([
+        fetchBlogById(id),
+        fetchBlogs()
+    ])
+    .then(([detailRes, listRes]) => {
+        setBlog(detailRes.data);
+        setOtherBlogs(listRes.data.filter(b => b.id !== detailRes.data.id));
+        setLoading(false);
+    })
+    .catch(err => {
+        console.error("Error fetching blog details:", err);
+        setLoading(false);
+    });
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,13 +61,7 @@ if (!token) {
     setStatus('loading');
 
     try {
-        // 1. Save to Firebase
-        await addDoc(collection(db, "contact_messages"), {
-            ...formData,
-            source: `Blog: ${blog?.title || 'Unknown'}`, 
-            timestamp: serverTimestamp(),
-            read: false 
-        });
+        // --- NOTE: Firebase contact_messages log removed ---
 
         // 2. EmailJS Logic
         const serviceID = "service_nhwsclu"; 
@@ -88,20 +102,14 @@ if (!token) {
     }
   };
 
-  // 1. Safety Check: Ensure blogs array exists
-  if (!blogs || blogs.length === 0) {
-    return <div className="pt-40 text-center text-2xl font-bold">No blogs data found. Please check data.jsx</div>;
+  if (loading) {
+      return (
+          <div className="pt-40 pb-20 flex justify-center">
+              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+          </div>
+      );
   }
 
-  // 2. Find the blog
-  const blog = blogs.find(b => b.id === parseInt(id));
-
-  // 3. Scroll to top on load
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
-
-  // 4. Fallback if specific blog not found
   if (!blog) {
     return (
       <div className="pt-40 text-center">
@@ -157,11 +165,11 @@ if (!token) {
                     <h2 className="text-3xl md:text-4xl font-bold text-brand-charcoal mb-6">{blog.title}</h2>
                     
                     <p className="text-gray-600 mb-8 text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-brand-rose first-letter:float-left first-letter:mr-3">
-                        {blog.content?.intro}
+                        {blog.intro}
                     </p>
 
                     {/* Dynamic Sections */}
-                    {blog.content?.sections?.map((section, idx) => (
+                    {blog.sections?.map((section, idx) => (
                         <div key={idx} className="mb-8">
                             <h3 className="text-2xl font-bold text-brand-charcoal mb-3">{section.title}</h3>
                             <p className="text-gray-600 leading-relaxed">{section.text}</p>
@@ -182,11 +190,11 @@ if (!token) {
                     </div>
 
                     {/* Best Practices */}
-                    {blog.content?.practices?.length > 0 && (
+                    {blog.practices?.length > 0 && (
                         <div className="mb-10">
                             <h3 className="text-2xl font-bold text-brand-charcoal mb-6">Best Practices</h3>
                             <div className="grid md:grid-cols-3 gap-6">
-                                {blog.content.practices.map((practice, idx) => (
+                                {blog.practices.map((practice, idx) => (
                                     <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 hover:shadow-lg transition">
                                         <div className="w-10 h-10 rounded-full bg-brand-rose text-white flex items-center justify-center font-bold mb-4">0{idx+1}</div>
                                         <h4 className="font-bold text-brand-charcoal mb-2">{practice.title}</h4>
@@ -238,7 +246,7 @@ if (!token) {
                 <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
                     <h3 className="font-bold text-xl text-brand-charcoal mb-6">Recent News</h3>
                     <div className="space-y-6">
-                        {blogs && blogs.filter(b => b.id !== blog.id).slice(0, 3).map(post => (
+                        {otherBlogs.slice(0, 3).map(post => (
                             <div key={post.id} className="flex gap-4 group cursor-pointer">
                                 <img src={post.image} alt="thumb" className="w-20 h-20 object-cover rounded-xl" />
                                 <div>
@@ -271,10 +279,10 @@ if (!token) {
                         />
 
                         <div className="flex justify-center mb-4">
-    <ReCAPTCHA
-        ref={captchaRef}
-        sitekey="6LfWPTwsAAAAAL7MIvw9G_BLeA7il4BTwNJCu7eN"
-    />
+     <ReCAPTCHA
+         ref={captchaRef}
+         sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+     />
 </div>
                         <button 
                             type="submit"
@@ -300,7 +308,7 @@ if (!token) {
         <div className="mt-20 pt-10 border-t border-gray-100">
              <h2 className="text-3xl font-bold text-brand-charcoal mb-8">Latest Related <span className="text-brand-rose">News & Blogs</span></h2>
              <div className="grid md:grid-cols-3 gap-8">
-                 {blogs && blogs.slice(0,3).map((post) => (
+                 {otherBlogs.slice(0,3).map((post) => (
                      <div key={post.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition border border-gray-100 overflow-hidden">
                          <div className="h-48 overflow-hidden">
                             <img src={post.image} className="w-full h-full object-cover hover:scale-110 transition duration-500" alt="blog"/>
