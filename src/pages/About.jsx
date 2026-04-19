@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { fetchTeamMembers, fetchStats } from '../api';
 import { Play, Trophy, Users, Target, Heart, Star } from 'lucide-react';
 import { motion } from 'framer-motion';

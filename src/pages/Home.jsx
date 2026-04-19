@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { fetchServices, fetchStats } from '../api';
 import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
