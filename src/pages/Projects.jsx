@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { fetchProjects } from '../api'; 
-import { ArrowRight, ExternalLink, Github, Star, GitFork, Loader2, CheckCircle, AlertCircle, Globe, Smartphone } from 'lucide-react';
+import { fetchProjects, fetchServices } from '../api'; 
+import { ArrowRight, ExternalLink, Github, Star, GitFork, Loader2, CheckCircle, AlertCircle, Globe, Smartphone, Server } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
@@ -15,6 +15,7 @@ const Projects = () => {
   const [filter, setFilter] = useState('All');
   const [githubRepos, setGithubRepos] = useState([]);
   const [apiProjects, setApiProjects] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const captchaRef = useRef(null);
@@ -24,13 +25,14 @@ const Projects = () => {
   const [status, setStatus] = useState('idle');
 
   useEffect(() => {
-    // 1. Fetch API Projects
-    const loadProjects = async () => {
+    // 1. Fetch API Projects & Services
+    const loadData = async () => {
       try {
-        const res = await fetchProjects();
-        setApiProjects(res.data);
+        const [projectsRes, servicesRes] = await Promise.all([fetchProjects(), fetchServices()]);
+        setApiProjects(projectsRes.data);
+        setServices(servicesRes.data);
       } catch (err) {
-        console.error("Error fetching projects:", err);
+        console.error("Error fetching projects/services:", err);
       }
     };
 
@@ -61,7 +63,7 @@ const Projects = () => {
       }
     };
 
-    loadProjects();
+    loadData();
     fetchRepos();
   }, []);
 
@@ -127,7 +129,7 @@ if (!token) {
   };
 
   const allProjects = [...apiProjects, ...githubRepos];
-  const categories = ['All', 'Web Design', 'Mobile App', 'UI/UX', 'GitHub'];
+  const categories = ['All', ...services.map(s => s.title), 'GitHub'];
 
   const filteredProjects = filter === 'All' 
     ? allProjects 

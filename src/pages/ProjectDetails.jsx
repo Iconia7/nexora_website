@@ -118,7 +118,7 @@ if (!token) {
     <div className="pt-20">
        <SEO 
     title={`${project.title} | Project Case Study`}
-    description={`Discover how Nexora built ${project.title}. A successful project featuring ${project.techStack || "modern web technologies"}. View the full case study here.`}
+    description={`Discover how Nexora built ${project.title}. A successful project featuring ${project.tech_stack?.join(', ') || "modern web technologies"}. View the full case study here.`}
     url={`/projects/${project.id}`}
   />
 
@@ -173,7 +173,7 @@ if (!token) {
               <p className="text-gray-600 mb-6 leading-relaxed">{project.solution}</p>
               
               <div className="grid md:grid-cols-2 gap-4 mb-8">
-                {['Live Connectivity', 'Secure Data', 'Real-time Updates', 'User Friendly'].map((item, idx) => (
+                {(project.tech_stack?.length > 0 ? project.tech_stack : ['Live Connectivity', 'Secure Data', 'Real-time Updates', 'User Friendly']).map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-gray-700 font-medium">
                     <CheckCircle className="text-brand-rose" size={20} /> {item}
                   </div>
@@ -190,20 +190,22 @@ if (!token) {
               <p className="text-gray-600 mb-8 leading-relaxed">{project.impact}</p>
 
               {/* Testimonial Box */}
-              <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
-                 <div className="flex gap-1 text-yellow-400 mb-4">
-                    {[1,2,3,4,5].map(star => <Star key={star} size={18} fill="currentColor" />)}
-                 </div>
-                 <h4 className="font-bold text-xl text-brand-charcoal mb-2">The Best Decision Ever!</h4>
-                 <p className="text-gray-600 italic mb-6">"Working with Nexora was a game changer. They understood our vision perfectly and delivered beyond expectations."</p>
-                 <div className="flex items-center gap-4">
-                    <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Client" className="w-12 h-12 rounded-full border-2 border-brand-rose" />
-                    <div>
-                        <span className="block font-bold text-brand-charcoal">Sarah Jenkins</span>
-                        <span className="text-sm text-gray-500">CTO, {project.client}</span>
+              {(project.testimonial_text || project.testimonial_author) && (
+                <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100">
+                    <div className="flex gap-1 text-yellow-400 mb-4">
+                        {[1,2,3,4,5].map(star => <Star key={star} size={18} fill="currentColor" />)}
                     </div>
-                 </div>
-              </div>
+                    <h4 className="font-bold text-xl text-brand-charcoal mb-2">The Best Decision Ever!</h4>
+                    <p className="text-gray-600 italic mb-6">"{project.testimonial_text || "Working with Nexora was a game changer. They understood our vision perfectly and delivered beyond expectations."}"</p>
+                    <div className="flex items-center gap-4">
+                        <img src={project.image || `https://randomuser.me/api/portraits/women/65.jpg`} alt="Client" className="w-12 h-12 rounded-full border-2 border-brand-rose object-cover" />
+                        <div>
+                            <span className="block font-bold text-brand-charcoal">{project.testimonial_author || "Happy Client"}</span>
+                            <span className="text-sm text-gray-500">CTO, {project.client}</span>
+                        </div>
+                    </div>
+                </div>
+              )}
             </motion.div>
           </div>
 

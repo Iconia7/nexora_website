@@ -19,6 +19,7 @@ export const fetchProjects = () => api.get('/projects/');
 export const fetchProjectById = (id) => api.get(`/projects/${id}/`);
 export const fetchBlogs = () => api.get('/blogs/');
 export const fetchBlogById = (id) => api.get(`/blogs/${id}/`);
+export const fetchBlogCategories = () => api.get('/blog-categories/');
 export const fetchProducts = () => api.get('/products/');
 
 // Careers
@@ -30,6 +31,10 @@ export const subscribeNewsletter = (email) => api.post('/newsletter/', { email }
 
 // Stats
 export const fetchStats = () => api.get('/stats/');
+
+// Testimonials & FAQs
+export const fetchTestimonials = () => api.get('/testimonials/');
+export const fetchFAQs = () => api.get('/faqs/');
 
 // Payments
 export const initiateStkPush = (data) => api.post('/mpesa/stkpush/', data, {

@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png'; 
 import SEO from '../components/SEO';
+import LucideIcon from '../components/LucideIcon';
 import { useRef } from 'react';
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from 'react-hot-toast';
@@ -220,10 +221,10 @@ if (!token) {
                         className="bg-white/5 border border-white/10 p-8 rounded-2xl transition-all duration-300 backdrop-blur-sm"
                     >
                         <div className="w-12 h-12 bg-brand-rose rounded-lg flex items-center justify-center mb-6 text-white shadow-lg shadow-brand-rose/30">
-                            {benefit.id === 1 ? <Globe /> : benefit.id === 2 ? <Heart /> : benefit.id === 3 ? <Clock /> : benefit.id === 4 ? <Users /> : benefit.id === 5 ? <Briefcase /> : <Coffee />}
+                            <LucideIcon name={benefit.icon || 'Heart'} size={24} />
                         </div>
                         <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
-                        <p className="text-gray-300 text-sm leading-relaxed">{benefit.desc}</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">{benefit.description}</p>
                     </motion.div>
                 ))}
             </motion.div>

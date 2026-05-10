@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { fetchServices, fetchStats } from '../api';
-import { ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
+import { fetchServices, fetchStats, fetchTestimonials, fetchBenefits } from '../api';
+import { ArrowRight, CheckCircle, Loader2, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import picture from '../assets/pattern.png';
@@ -25,13 +25,22 @@ const staggerContainer = {
 const Home = () => {
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
+  const [benefits, setBenefits] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchServices(), fetchStats()])
-      .then(([servicesRes, statsRes]) => {
+    Promise.all([
+      fetchServices(), 
+      fetchStats(), 
+      fetchTestimonials(), 
+      fetchBenefits()
+    ])
+      .then(([servicesRes, statsRes, testimonialsRes, benefitsRes]) => {
         setServices(servicesRes.data);
         setStats(statsRes.data);
+        setTestimonials(testimonialsRes.data);
+        setBenefits(benefitsRes.data);
         setLoading(false);
       })
       .catch(err => {
@@ -42,10 +51,24 @@ const Home = () => {
 
   // Fallback stats if backend is empty
   const displayStats = stats.length > 0 ? stats : [
-    { value: "200+", label: "Happy Clients" },
-    { value: "50+", label: "Projects Done" },
+    { value: "200+", label: "Systems Deployed" },
+    { value: "50+", label: "Enterprise Clients" },
     { value: "10+", label: "Team Members" },
     { value: "5+", label: "Years Experience" }
+  ];
+
+  // Fallback benefits
+  const displayBenefits = benefits.length > 0 ? benefits : [
+    { title: 'Expert Team Members', description: 'Highly skilled professionals dedicated to your success.' },
+    { title: '24/7 Support', description: 'We are always here to help you whenever you need us.' },
+    { title: 'Proven Track Record', description: 'Hundreds of successful projects and satisfied clients.' },
+    { title: 'Innovative Strategies', desc: 'Using the latest tech to stay ahead of the competition.' }
+  ];
+
+  // Fallback Testimonials
+  const displayTestimonials = testimonials.length > 0 ? testimonials : [
+    { name: "Sarah Johnson", role: "CEO, TechStart", text: "Nexora transformed our digital presence completely. Their team is professional, creative, and incredibly skilled.", rating: 5 },
+    { name: "Michael Chen", role: "Founder, InnovateHQ", text: "The best tech agency we have worked with. Their attention to detail and engineering excellence is unmatched.", rating: 5 }
   ];
 
   return (
@@ -232,6 +255,43 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="py-24 bg-brand-charcoal text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-rose/5 rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
+          <span className="text-brand-rose font-bold uppercase tracking-wider text-sm">Client Success</span>
+          <h2 className="text-4xl font-bold mt-2 mb-16">Trusted by Enterprise Leaders</h2>
+
+          <div className="grid md:grid-cols-2 gap-8 text-left">
+            {displayTestimonials.map((item, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white/5 backdrop-blur-sm border border-white/10 p-10 rounded-3xl relative"
+              >
+                <div className="flex gap-1 text-yellow-400 mb-6">
+                  {[...Array(item.rating || 5)].map((_, star) => <Star key={star} size={18} fill="currentColor" />)}
+                </div>
+                <p className="text-gray-300 text-lg italic mb-8 leading-relaxed">"{item.text}"</p>
+                <div className="flex items-center gap-4 border-t border-white/10 pt-6">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-rose to-purple-600 p-[2px]">
+                    <img 
+                        src={item.image || `https://randomuser.me/api/portraits/men/${idx + 45}.jpg`} 
+                        alt="Client" 
+                        className="w-full h-full rounded-full border-2 border-brand-charcoal object-cover" 
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-lg">{item.name}</h4>
+                    <p className="text-sm text-brand-rose">{item.role} {item.company ? `@ ${item.company}` : ''}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Why Choose Us */}
       <section className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
@@ -256,12 +316,7 @@ const Home = () => {
             <motion.h2 variants={fadeInUp} className="text-4xl font-bold mt-3 mb-6 text-brand-charcoal leading-tight">Why You Should Trust Nexora?</motion.h2>
             
             <div className="grid gap-6">
-              {[
-                { title: 'Expert Team Members', desc: 'Highly skilled professionals dedicated to your success.' },
-                { title: '24/7 Support', desc: 'We are always here to help you whenever you need us.' },
-                { title: 'Proven Track Record', desc: 'Hundreds of successful projects and satisfied clients.' },
-                { title: 'Innovative Strategies', desc: 'Using the latest tech to stay ahead of the competition.' }
-              ].map((item, idx) => (
+              {displayBenefits.map((item, idx) => (
                 <motion.div 
                   variants={fadeInUp}
                   key={idx} 
@@ -273,7 +328,7 @@ const Home = () => {
                   </div>
                   <div>
                       <h4 className="text-xl font-bold text-brand-charcoal mb-2">{item.title}</h4>
-                      <p className="text-gray-600">{item.desc}</p>
+                      <p className="text-gray-600">{item.description}</p>
                   </div>
                 </motion.div>
               ))}

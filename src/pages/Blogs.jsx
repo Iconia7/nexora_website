@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchBlogs } from '../api';
+import { fetchBlogs, fetchBlogCategories } from '../api';
 import { Search, Calendar, User, ArrowRight, ChevronRight, Loader2, CheckCircle, AlertCircle, CheckIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -17,6 +17,7 @@ const fadeInUp = {
 
 const Blogs = () => {
   const [blogs, setBlogs] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -28,13 +29,15 @@ const Blogs = () => {
     const captchaRef = useRef(null);
 
   useEffect(() => {
-    fetchBlogs()
-      .then(res => {
-        setBlogs(res.data);
+    setLoading(true);
+    Promise.all([fetchBlogs(), fetchBlogCategories()])
+      .then(([blogsRes, categoriesRes]) => {
+        setBlogs(blogsRes.data);
+        setDbCategories(categoriesRes.data);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Error fetching blogs:", err);
+        console.error("Error fetching blogs and categories:", err);
         setLoading(false);
       });
   }, []);
@@ -100,7 +103,7 @@ if (!token) {
     }
   };
 
-  const categories = ['All', 'Web Development', 'Mobile App', 'Cloud Computing', 'UI/UX Design'];
+  const categories = ['All', ...dbCategories.map(c => c.name)];
 
   // Filter Logic
   const filteredBlogs = blogs.filter(blog => {

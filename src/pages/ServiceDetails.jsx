@@ -116,7 +116,7 @@ if (!token) {
       );
   }
 
-  const { details } = currentService;
+
 
   return (
     <div className="pt-20">
@@ -151,13 +151,13 @@ if (!token) {
                 <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{duration:0.5}}>
                     <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80" alt="Team" className="rounded-2xl shadow-xl w-full h-[400px] object-cover mb-10" />
 
-                    <h2 className="text-3xl font-bold text-brand-charcoal mb-4">{details?.heading || currentService.title}</h2>
+                    <h2 className="text-3xl font-bold text-brand-charcoal mb-4">{currentService.heading || currentService.title}</h2>
                     <div className="flex gap-4 mb-6">
                         <span className="text-6xl font-bold text-brand-rose leading-none float-left mr-2">
-                            {details?.intro?.charAt(0) || "W"}
+                            {currentService.intro?.charAt(0) || "W"}
                         </span>
                         <p className="text-gray-600 leading-relaxed pt-2">
-                            {details?.intro?.substring(1) || currentService.desc}
+                            {currentService.intro?.substring(1) || currentService.description}
                         </p>
                     </div>
                     
@@ -167,7 +167,7 @@ if (!token) {
 
                     <h3 className="text-2xl font-bold text-brand-charcoal mb-6">Services Include:</h3>
                     <div className="grid md:grid-cols-2 gap-4 mb-12">
-                        {(details?.includes || ['Custom Solutions', 'Expert Support']).map((item, idx) => (
+                        {(currentService.includes || ['Custom Solutions', 'Expert Support']).map((item, idx) => (
                             <div key={idx} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-brand-rose/50 transition">
                                 <CheckCircle className="text-brand-rose shrink-0" size={20} />
                                 <span className="font-semibold text-gray-700">{item}</span>
@@ -182,7 +182,7 @@ if (!token) {
 
                     <h3 className="text-2xl font-bold text-brand-charcoal mb-8">Our Expertise in {currentService.title}</h3>
                     <div className="space-y-6">
-                        {(details?.expertise || []).map((exp, idx) => (
+                        {(currentService.expertise || []).map((exp, idx) => (
                             <div key={idx} className="flex gap-6 group">
                                 <div className="w-16 h-16 rounded-full bg-white border-2 border-brand-rose text-brand-rose flex items-center justify-center font-bold text-xl shrink-0 group-hover:bg-brand-rose group-hover:text-white transition">
                                     0{idx + 1}
@@ -193,7 +193,7 @@ if (!token) {
                                 </div>
                             </div>
                         ))}
-                        {(!details?.expertise || details.expertise.length === 0) && (
+                        {(!currentService.expertise || currentService.expertise.length === 0) && (
                             <p className="text-gray-500 italic">Detailed expertise info coming soon.</p>
                         )}
                     </div>

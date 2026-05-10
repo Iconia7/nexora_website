@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchServices } from '../api';
+import { fetchServices, fetchFAQs, fetchBenefits } from '../api';
 import { ArrowRight, Plus, Minus, HelpCircle, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -18,6 +18,8 @@ const fadeInUp = {
 
 const Services = () => {
   const [services, setServices] = useState([]);
+  const [faqs, setFaqs] = useState([]);
+  const [benefits, setBenefits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState(0);
   const captchaRef = useRef(null);
@@ -27,13 +29,16 @@ const Services = () => {
   const [status, setStatus] = useState('idle');
 
   useEffect(() => {
-    fetchServices()
-      .then(res => {
-        setServices(res.data);
+    setLoading(true);
+    Promise.all([fetchServices(), fetchFAQs(), fetchBenefits()])
+      .then(([servicesRes, faqsRes, benefitsRes]) => {
+        setServices(servicesRes.data);
+        setFaqs(faqsRes.data);
+        setBenefits(benefitsRes.data);
         setLoading(false);
       })
       .catch(err => {
-        console.error("Error fetching services:", err);
+        console.error("Error fetching services data:", err);
         setLoading(false);
       });
   }, []);
@@ -100,11 +105,18 @@ if (!token) {
     }
   };
 
-  const faqs = [
+  const displayFaqs = faqs.length > 0 ? faqs : [
     { question: "What services does your company provide?", answer: "We provide a comprehensive range of digital services including Website Development, Mobile App Development, UI/UX Design, Digital Marketing, and Cloud Computing solutions." },
     { question: "What industries do you serve?", answer: "We serve a diverse range of industries including Healthcare, E-commerce, Real Estate, Education, and FinTech, delivering custom solutions for each sector." },
     { question: "Do you offer custom IT solutions?", answer: "Yes, absolutely. We specialize in building custom software solutions from the ground up to ensure they align perfectly with your specific business workflows." },
     { question: "How can I contact your support team?", answer: "You can reach our 24/7 support team via email at info@nexoracreatives.co.ke or call us directly at +254 115 332 870." },
+  ];
+
+  const displayBenefits = benefits.length > 0 ? benefits : [
+    { title: "Expert Team", description: "Technical experts with years of experience." },
+    { title: "Fast Delivery", description: "Efficient project management and delivery." },
+    { title: "24/7 Support", description: "Always here to help you." },
+    { title: "Fair Pricing", description: "Competitive rates for high-quality work." }
   ];
 
   return (
@@ -196,13 +208,13 @@ if (!token) {
                 <p className="text-gray-300 mb-8 text-lg">We combine technical expertise with a deep understanding of business processes.</p>
                 
                 <div className="grid grid-cols-2 gap-6">
-                    {["Expert Team", "Fast Delivery", "24/7 Support", "Fair Pricing"].map((item, idx) => (
+                    {displayBenefits.map((item, idx) => (
                         <motion.div 
                           key={idx} 
                           whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
                           className="bg-white/5 p-6 rounded-xl border border-white/10 transition cursor-pointer"
                         >
-                            <h4 className="text-xl font-bold text-brand-rose">{item}</h4>
+                            <h4 className="text-xl font-bold text-brand-rose">{item.title}</h4>
                         </motion.div>
                     ))}
                 </div>
@@ -282,7 +294,7 @@ if (!token) {
                 </div>
 
                 <div className="space-y-4">
-                    {faqs.map((faq, idx) => (
+                    {displayFaqs.map((faq, idx) => (
                         <motion.div 
                             key={idx} 
                             className={`border rounded-xl overflow-hidden ${openFaq === idx ? 'border-brand-rose shadow-md' : 'border-gray-200'}`}
