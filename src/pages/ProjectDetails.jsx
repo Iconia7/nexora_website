@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProjectById, fetchProjects } from '../api';
-import { CheckCircle, ArrowRight, MapPin, Calendar, User, Star, Loader2, AlertCircle, Globe, Smartphone, Palette, Share2, Play } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { CheckCircle, ArrowRight, MapPin, Calendar, User, Star, Loader2, AlertCircle, Globe, Smartphone, Palette, Share2, Play, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
@@ -18,6 +18,7 @@ const fadeInUp = {
 const ProjectDetails = () => {
   const { id } = useParams();
   const [project, setProject] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [otherProjects, setOtherProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const captchaRef = useRef(null);
@@ -190,25 +191,38 @@ if (!token) {
                  </div>
                )}
 
-              {/* Dynamic Showcase Images (Gallery) */}
-              {project.gallery?.length > 0 && (
-                <div className="grid md:grid-cols-2 gap-6 mb-12">
-                   {project.gallery.map((img, idx) => (
-                     <div key={img.id} className="relative group overflow-hidden rounded-xl shadow-lg border border-gray-100">
-                        <img 
-                          src={img.image} 
-                          alt={img.caption || `${project.title} gallery ${idx}`} 
-                          className="w-full h-[250px] object-cover transition duration-500 group-hover:scale-110" 
-                        />
-                        {img.caption && (
-                          <div className="absolute inset-0 bg-brand-charcoal/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                            <p className="text-white text-xs font-bold uppercase tracking-wider">{img.caption}</p>
-                          </div>
-                        )}
-                     </div>
-                   ))}
-                </div>
-              )}
+               {/* Dynamic Showcase Images (Gallery) */}
+               {project.gallery?.length > 0 && (
+                 <div className="grid md:grid-cols-2 gap-6 mb-12">
+                    {project.gallery.map((img, idx) => (
+                      <div 
+                        key={img.id} 
+                        onClick={() => setSelectedImage(img.image)}
+                        className="relative group overflow-hidden rounded-xl shadow-lg border border-gray-100 cursor-zoom-in"
+                      >
+                         <img 
+                           src={img.image} 
+                           alt={img.caption || `${project.title} gallery ${idx}`} 
+                           className="w-full h-[250px] object-cover transition duration-500 group-hover:scale-110" 
+                         />
+                         <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <motion.div
+                                initial={{ scale: 0.5, opacity: 0 }}
+                                whileInView={{ scale: 1, opacity: 1 }}
+                                className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white"
+                            >
+                                <ArrowRight className="-rotate-45" size={24}/>
+                            </motion.div>
+                         </div>
+                         {img.caption && (
+                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-brand-charcoal/80 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform">
+                             <p className="text-white text-xs font-bold uppercase tracking-wider">{img.caption}</p>
+                           </div>
+                         )}
+                      </div>
+                    ))}
+                 </div>
+               )}
 
               {project.impact && (
                  <>
@@ -420,6 +434,34 @@ if (!token) {
         </section>
 
       </div>
+      {/* LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 z-[100] bg-brand-charcoal/95 backdrop-blur-md flex items-center justify-center p-4 md:p-10"
+          >
+             <button 
+                className="absolute top-6 right-6 text-white hover:text-brand-rose transition-colors z-[110]"
+                onClick={() => setSelectedImage(null)}
+             >
+                <X size={40} />
+             </button>
+             
+             <motion.img 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                src={selectedImage} 
+                alt="Project Full View" 
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-black/50"
+             />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
