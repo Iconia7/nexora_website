@@ -166,19 +166,29 @@ if (!token) {
                 </div>
               </div>
               
-              <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Challenge</h3>
-              <p className="text-gray-600 mb-8 leading-relaxed">{project.challenge}</p>
-
-              <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Solution</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">{project.solution}</p>
+              {project.challenge && (
+                 <>
+                   <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Challenge</h3>
+                   <p className="text-gray-600 mb-8 leading-relaxed">{project.challenge}</p>
+                 </>
+               )}
+ 
+               {project.solution && (
+                 <>
+                   <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Solution</h3>
+                   <p className="text-gray-600 mb-6 leading-relaxed">{project.solution}</p>
+                 </>
+               )}
               
-              <div className="grid md:grid-cols-2 gap-4 mb-8">
-                {(project.tech_stack?.length > 0 ? project.tech_stack : ['Live Connectivity', 'Secure Data', 'Real-time Updates', 'User Friendly']).map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-gray-700 font-medium">
-                    <CheckCircle className="text-brand-rose" size={20} /> {item}
-                  </div>
-                ))}
-              </div>
+               {project.tech_stack?.length > 0 && (
+                 <div className="grid md:grid-cols-2 gap-4 mb-8">
+                   {project.tech_stack.map((item, idx) => (
+                     <div key={idx} className="flex items-center gap-2 text-gray-700 font-medium">
+                       <CheckCircle className="text-brand-rose" size={20} /> {item}
+                     </div>
+                   ))}
+                 </div>
+               )}
 
               {/* Dynamic Showcase Images (Gallery) */}
               {project.gallery?.length > 0 && (
@@ -200,8 +210,12 @@ if (!token) {
                 </div>
               )}
 
-              <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Impact</h3>
-              <p className="text-gray-600 mb-8 leading-relaxed">{project.impact}</p>
+              {project.impact && (
+                 <>
+                   <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Impact</h3>
+                   <p className="text-gray-600 mb-8 leading-relaxed">{project.impact}</p>
+                 </>
+               )}
 
               {/* Testimonial Box */}
               {(project.testimonial_text || project.testimonial_author) && (
