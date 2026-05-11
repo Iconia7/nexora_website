@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProjectById, fetchProjects } from '../api';
-import { CheckCircle, ArrowRight, MapPin, Calendar, User, Star, Loader2, AlertCircle, Globe, Smartphone } from 'lucide-react';
+import { CheckCircle, ArrowRight, MapPin, Calendar, User, Star, Loader2, AlertCircle, Globe, Smartphone, Palette, Share2, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 import picture from '../assets/pattern.png';
@@ -180,11 +180,25 @@ if (!token) {
                 ))}
               </div>
 
-              {/* Showcase Images */}
-              <div className="grid md:grid-cols-2 gap-6 mb-12">
-                 <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80" alt="Detail 1" className="rounded-xl shadow-lg hover:scale-105 transition duration-500" />
-                 <img src="https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?auto=format&fit=crop&q=80" alt="Detail 2" className="rounded-xl shadow-lg hover:scale-105 transition duration-500" />
-              </div>
+              {/* Dynamic Showcase Images (Gallery) */}
+              {project.gallery?.length > 0 && (
+                <div className="grid md:grid-cols-2 gap-6 mb-12">
+                   {project.gallery.map((img, idx) => (
+                     <div key={img.id} className="relative group overflow-hidden rounded-xl shadow-lg border border-gray-100">
+                        <img 
+                          src={img.image} 
+                          alt={img.caption || `${project.title} gallery ${idx}`} 
+                          className="w-full h-[250px] object-cover transition duration-500 group-hover:scale-110" 
+                        />
+                        {img.caption && (
+                          <div className="absolute inset-0 bg-brand-charcoal/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                            <p className="text-white text-xs font-bold uppercase tracking-wider">{img.caption}</p>
+                          </div>
+                        )}
+                     </div>
+                   ))}
+                </div>
+              )}
 
               <h3 className="text-2xl font-bold text-brand-charcoal mb-4">The Impact</h3>
               <p className="text-gray-600 mb-8 leading-relaxed">{project.impact}</p>
@@ -250,9 +264,9 @@ if (!token) {
                 </div>
 
                 {/* PROJECT LINKS */}
-                {(project.live_url || project.playstore_url) && (
+                {(project.live_url || project.playstore_url || project.figma_url || project.social_url || project.video_url) && (
                     <div className="mt-8 pt-8 border-t border-gray-600 space-y-4">
-                        <h4 className="font-bold mb-4 text-brand-rose uppercase tracking-wider text-sm">Project Gallery</h4>
+                        <h4 className="font-bold mb-4 text-brand-rose uppercase tracking-wider text-sm">Project Resources</h4>
                         
                         {project.live_url && (
                             <a 
@@ -275,6 +289,42 @@ if (!token) {
                             >
                                 <Smartphone size={20} className="group-hover:scale-110 transition-transform" /> 
                                 Available on Play Store
+                            </a>
+                        )}
+
+                        {project.figma_url && (
+                            <a 
+                                href={project.figma_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="w-full bg-white/10 text-white hover:bg-brand-rose font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group border border-white/20"
+                            >
+                                <Palette size={20} className="group-hover:rotate-12 transition-transform" /> 
+                                View Figma Prototype
+                            </a>
+                        )}
+
+                        {project.social_url && (
+                            <a 
+                                href={project.social_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="w-full bg-white/10 text-white hover:bg-brand-rose font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group border border-white/20"
+                            >
+                                <Share2 size={20} className="group-hover:scale-110 transition-transform" /> 
+                                View Social Project
+                            </a>
+                        )}
+
+                        {project.video_url && (
+                            <a 
+                                href={project.video_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="w-full bg-brand-rose text-white hover:bg-white hover:text-brand-charcoal font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group border-2 border-transparent hover:border-brand-rose"
+                            >
+                                <Play size={20} className="group-hover:scale-110 transition-transform" /> 
+                                Watch Demo Video
                             </a>
                         )}
                     </div>
