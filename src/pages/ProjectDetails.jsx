@@ -161,7 +161,7 @@ if (!token) {
                   {project.title.charAt(0)}
                 </div>
                 <div>
-                   <h2 className="text-3xl font-bold text-brand-charcoal">{project.title} - {project.category}</h2>
+                   <h2 className="text-3xl font-bold text-brand-charcoal">{project.title} - {project.categories?.join(" | ")}</h2>
                    <p className="text-gray-500 mt-2">A revolutionary solution for modern problems.</p>
                 </div>
               </div>
@@ -243,8 +243,8 @@ if (!token) {
                    <div className="flex items-start gap-4">
                       <div className="bg-brand-rose/20 p-2 rounded-lg text-brand-rose"><CheckCircle size={20}/></div>
                       <div>
-                          <span className="text-gray-400 text-sm block">Category:</span>
-                          <span className="font-bold">{project.category}</span>
+                          <span className="text-gray-400 text-sm block">Categories:</span>
+                          <span className="font-bold">{project.categories?.join(", ")}</span>
                       </div>
                    </div>
                 </div>

@@ -133,7 +133,12 @@ if (!token) {
 
   const filteredProjects = filter === 'All' 
     ? allProjects 
-    : allProjects.filter(p => p.category.includes(filter));
+    : allProjects.filter(p => {
+        if (Array.isArray(p.categories)) {
+          return p.categories.includes(filter);
+        }
+        return p.category === filter;
+      });
 
   return (
     <div className="pt-20">
@@ -206,7 +211,9 @@ if (!token) {
                             transition={{ delay: 0.1 }}
                             className="w-full"
                         >
-                            <span className="text-brand-rose font-bold uppercase tracking-wider text-xs mb-3 block">{project.category}</span>
+                            <span className="text-brand-rose font-bold uppercase tracking-wider text-xs mb-3 block">
+                                {Array.isArray(project.categories) ? project.categories.join(' | ') : project.category}
+                            </span>
                             <h3 className="text-2xl font-bold mb-4 line-clamp-2">{project.title}</h3>
                             
                             {/* NEW: Project Badges */}

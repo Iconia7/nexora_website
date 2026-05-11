@@ -3,7 +3,7 @@ import { Phone, Mail, Clock, MapPin, Send, Loader2, CheckCircle, AlertCircle } f
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
-import { submitContactMessage } from '../api';
+import { submitContactMessage, fetchServices } from '../api';
 import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
 import ReCAPTCHA from "react-google-recaptcha";
@@ -21,8 +21,15 @@ const Contact = () => {
 
     const captchaRef = useRef(null);
 
+  const [services, setServices] = useState([]);
   // 2. State for Submission Status
   const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
+
+  React.useEffect(() => {
+    fetchServices()
+      .then(res => setServices(res.data))
+      .catch(err => console.error("Error fetching services for contact form:", err));
+  }, []);
 
   // 3. Handle Input Changes
   const handleChange = (e) => {
@@ -241,11 +248,10 @@ if (!token) {
                     className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-rose focus:ring-2 focus:ring-brand-rose/20 transition-all text-gray-500"
                   >
                     <option disabled>Select Service</option>
-                    <option>Web Development</option>
-                    <option>Mobile App</option>
-                    <option>UI/UX Design</option>
-                    <option>Digital Marketing</option>
-                    <option>Other</option>
+                    {services.map(s => (
+                        <option key={s.id} value={s.title}>{s.title}</option>
+                    ))}
+                    <option value="Other">Other</option>
                   </select>
                 </motion.div>
               
