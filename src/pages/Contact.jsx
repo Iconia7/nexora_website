@@ -131,10 +131,40 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-  title="Contact Us | Get a Free Quote Today"
-  description="Ready to start your project? Contact Nexora Creative Solutions in Thika. Call us, email us, or fill out our form for a free consultation."
-  url="/contact"
-/>
+          title="Contact Us | Free Consultation & Quote | Nexora Creative Solutions"
+          description="Ready to start your digital project? Contact Nexora Creative Solutions in Thika & Nairobi. Call +254 115 332 870 or email info@nexoracreatives.co.ke."
+          url="/contact"
+          image="/ncs.png"
+          keywords={[
+            "contact Nexora",
+            "hire developers Kenya",
+            "web design quote Nairobi",
+            "app development consultation Thika"
+          ]}
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Contact Us", item: "/contact" }
+          ]}
+          schema={{
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            "name": "Contact Nexora Creative Solutions",
+            "description": "Get in touch with Nexora Creative Solutions for software development inquiries and project quotes.",
+            "url": "https://nexoracreatives.co.ke/contact",
+            "mainEntity": {
+              "@type": "ProfessionalService",
+              "name": "Nexora Creative Solutions",
+              "telephone": "+254 115 332 870",
+              "email": "info@nexoracreatives.co.ke",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Thika",
+                "addressRegion": "Kiambu",
+                "addressCountry": "KE"
+              }
+            }
+          }}
+        />
       
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

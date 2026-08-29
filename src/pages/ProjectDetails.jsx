@@ -118,10 +118,27 @@ if (!token) {
   return (
     <div className="pt-20">
        <SEO 
-    title={`${project.title} | Project Case Study`}
-    description={`Discover how Nexora built ${project.title}. A successful project featuring ${project.tech_stack?.join(', ') || "modern web technologies"}. View the full case study here.`}
-    url={`/projects/${project.id}`}
-  />
+        title={`${project.title} | Case Study | Nexora Creative Solutions`}
+        description={`Discover how Nexora built ${project.title}. A successful project featuring ${Array.isArray(project.tech_stack) ? project.tech_stack.join(', ') : 'modern tech stacks'}. View the full case study.`}
+        url={`/projects/${project.id}`}
+        image={project.image || "/ncs.png"}
+        breadcrumbs={[
+          { name: "Home", item: "/" },
+          { name: "Projects", item: "/projects" },
+          { name: project.title, item: `/projects/${project.id}` }
+        ]}
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "CreativeWork",
+          "name": project.title,
+          "description": project.description || `Case study of ${project.title} by Nexora Creative Solutions.`,
+          "author": {
+            "@type": "Organization",
+            "name": "Nexora Creative Solutions",
+            "url": "https://nexoracreatives.co.ke"
+          }
+        }}
+      />
 
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

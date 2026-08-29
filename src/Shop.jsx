@@ -207,10 +207,29 @@ export default function Shop({ onBack }) {
   return (
     <>
     <SEO 
-  title="Nexora Shop | Official Developer Merch"
-  description="Buy official Nexora Creative Solutions merchandise. High-quality 'Source Code' hoodies, tees, and developer gear. Delivery countrywide."
-  url="/shop"
-/>
+      title="Nexora Shop | Official Developer Merch & Swag"
+      description="Buy official Nexora Creative Solutions developer merchandise. High-quality hoodies, tees, and developer gear. Fast countrywide delivery in Kenya."
+      url="/shop"
+      image="/ncs.png"
+      keywords={[
+        "developer merchandise Kenya",
+        "coder hoodie Nairobi",
+        "Nexora store",
+        "tech swag Kenya",
+        "programmer t-shirts Kenya"
+      ]}
+      breadcrumbs={[
+        { name: "Home", item: "/" },
+        { name: "Store", item: "/shop" }
+      ]}
+      schema={{
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "Nexora Developer Merch Store",
+        "description": "Official Nexora developer apparel and technology merchandise.",
+        "url": "https://nexoracreatives.co.ke/shop"
+      }}
+    />
       {view === 'receipt' && successData ? (
         <ReceiptView 
             transaction={successData.details}

@@ -140,10 +140,21 @@ if (!token) {
   return (
     <div className="pt-20">
        <SEO 
-  title="Careers at Nexora | Join Our Tech Team"
-  description="Looking for tech jobs in Thika? Explore current openings for web developers, designers, and interns at Nexora Creative Solutions."
-  url="/careers"
-/>
+        title="Careers & Tech Jobs in Kenya | Join Nexora Creative Solutions"
+        description="Looking for software engineering or design jobs in Kenya? Explore openings for frontend, backend, Flutter developers, and UI/UX designers at Nexora."
+        url="/careers"
+        image="/ncs.png"
+        keywords={[
+          "tech jobs Kenya",
+          "software engineering jobs Nairobi",
+          "web developer vacancies Kenya",
+          "Nexora careers"
+        ]}
+        breadcrumbs={[
+          { name: "Home", item: "/" },
+          { name: "Careers", item: "/careers" }
+        ]}
+      />
 
       {/* 1. New Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

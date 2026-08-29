@@ -121,10 +121,28 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-    title={`${currentService.title} Services | Nexora Creative Solutions`}
-    description={`Professional ${currentService.title} services in Kenya. We provide top-tier solutions in technology tailored for your business needs.`}
-    url={`/services/${currentService.id}`}
-  />
+          title={`${currentService.title} Services | Nexora Creative Solutions`}
+          description={`Professional ${currentService.title} services in Kenya. We provide top-tier digital engineering tailored for your business needs.`}
+          url={`/services/${currentService.id}`}
+          image="/ncs.png"
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Services", item: "/services" },
+            { name: currentService.title, item: `/services/${currentService.id}` }
+          ]}
+          schema={{
+            "@context": "https://schema.org",
+            "@type": "Service",
+            "name": currentService.title,
+            "description": currentService.description || `Professional ${currentService.title} by Nexora Creative Solutions.`,
+            "provider": {
+              "@type": "ProfessionalService",
+              "name": "Nexora Creative Solutions",
+              "url": "https://nexoracreatives.co.ke"
+            },
+            "areaServed": "Kenya"
+          }}
+        />
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">
         <div className="absolute inset-0 z-0">

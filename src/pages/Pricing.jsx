@@ -373,7 +373,46 @@ const finalizeOrder = async (paymentStatus, receiptRef = "N/A", methodUsed = "mp
 
 return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-       <SEO title="Pricing | Nexora Creative Solutions" description="Transparent pricing packages." url="/pricing"/>
+       <SEO 
+        title="Web & App Development Pricing Packages | Nexora Creative Solutions" 
+        description="Affordable and transparent pricing for website design, mobile apps, and custom software packages in Kenya. Zero hidden fees." 
+        url="/pricing"
+        image="/ncs.png"
+        keywords={[
+          "web design cost Kenya",
+          "app development pricing Nairobi",
+          "website packages Kenya",
+          "software development cost",
+          "Nexora pricing"
+        ]}
+        breadcrumbs={[
+          { name: "Home", item: "/" },
+          { name: "Pricing", item: "/pricing" }
+        ]}
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "OfferCatalog",
+          "name": "Software and Web Design Packages",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Website Development Packages"
+              },
+              "priceCurrency": "KES"
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Mobile App Development Packages"
+              },
+              "priceCurrency": "KES"
+            }
+          ]
+        }}
+      />
       
       {/* 1. Header Section */}
       <section className="relative py-20 text-center text-white overflow-hidden">

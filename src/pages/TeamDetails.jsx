@@ -118,8 +118,14 @@ const TeamDetails = () => {
         <div className="pt-20">
             <SEO
                 title={`${member.name} - ${member.role} | Nexora Team`}
-                description={`Meet ${member.name}, our expert ${member.role} at Nexora Creative Solutions. Dedicated to delivering excellence in ${member.department || "tech and design"}.`}
+                description={`Meet ${member.name}, ${member.role} at Nexora Creative Solutions. Dedicated to engineering and creative excellence in ${member.department || "tech and design"}.`}
                 url={`/team/${member.id}`}
+                image={member.image || "/ncs.png"}
+                breadcrumbs={[
+                    { name: "Home", item: "/" },
+                    { name: "Our Team", item: "/team" },
+                    { name: member.name, item: `/team/${member.id}` }
+                ]}
             />
 
             {/* 1. Header Section */}

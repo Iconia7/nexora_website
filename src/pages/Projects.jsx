@@ -143,10 +143,29 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-  title="Our Portfolio | Recent Projects by Nexora"
-  description="See our work in action. From e-commerce platforms to corporate websites and mobile apps, discover how we help businesses succeed online."
-  url="/projects"
-/>
+          title="Project Portfolio | Software, Web & Mobile Case Studies | Nexora"
+          description="Explore our portfolio of cutting-edge software solutions, mobile apps, and high-performance websites built for businesses in Kenya and globally."
+          url="/projects"
+          image="/ncs.png"
+          keywords={[
+            "Nexora portfolio",
+            "web development projects Kenya",
+            "mobile app portfolio Nairobi",
+            "software case studies",
+            "tech projects Kenya"
+          ]}
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Projects", item: "/projects" }
+          ]}
+          schema={{
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Nexora Creative Solutions Project Portfolio",
+            "description": "Showcase of deployed software applications, websites, and mobile platforms by Nexora Creative Solutions.",
+            "url": "https://nexoracreatives.co.ke/projects"
+          }}
+        />
       
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

@@ -122,10 +122,60 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-  title="Our Services | Web Design, App Dev & SEO"
-  description="Explore our premium tech services: Mobile App Development (Flutter), Website Design (React), SEO, Graphic Design, and Software Solutions."
-  url="/services"
-/>
+          title="Digital Services | Web Design, Mobile Apps & Cloud Solutions | Nexora"
+          description="Explore Nexora's premium tech services: Custom Mobile App Development, Responsive Web Design, SEO Optimization, UI/UX Design, and Cloud Architecture in Kenya."
+          url="/services"
+          image="/ncs.png"
+          keywords={[
+            "web design Kenya",
+            "mobile app development Nairobi",
+            "UI UX design Kenya",
+            "software development Thika",
+            "SEO services Kenya",
+            "e-commerce development Kenya"
+          ]}
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Services", item: "/services" }
+          ]}
+          schema={{
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Services Offered by Nexora Creative Solutions",
+            "itemListElement": [
+              {
+                "@type": "Service",
+                "position": 1,
+                "name": "Custom Mobile App Development",
+                "description": "High-performance iOS and Android mobile apps engineered with Flutter and React Native.",
+                "provider": {
+                  "@type": "ProfessionalService",
+                  "name": "Nexora Creative Solutions"
+                }
+              },
+              {
+                "@type": "Service",
+                "position": 2,
+                "name": "Custom Web Application Design & Development",
+                "description": "Modern, fast, and SEO-optimized responsive web applications and portals.",
+                "provider": {
+                  "@type": "ProfessionalService",
+                  "name": "Nexora Creative Solutions"
+                }
+              },
+              {
+                "@type": "Service",
+                "position": 3,
+                "name": "UI/UX & Digital Brand Design",
+                "description": "Engaging user interfaces, wireframing, brand identity, and interactive digital experiences.",
+                "provider": {
+                  "@type": "ProfessionalService",
+                  "name": "Nexora Creative Solutions"
+                }
+              }
+            ]
+          }}
+        />
       
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

@@ -115,10 +115,37 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-  title="Tech Blog & Insights | Nexora Creative Solutions"
-  description="Stay ahead with the latest tech trends, coding tutorials, and digital marketing insights written by our expert developers."
-  url="/blogs"
-/>
+          title="Tech Insights & Software Engineering Blog | Nexora"
+          description="Stay ahead with the latest web development trends, Flutter tutorials, cloud architectures, and digital marketing insights written by Nexora developers."
+          url="/blogs"
+          image="/ncs.png"
+          keywords={[
+            "tech blog Kenya",
+            "software tutorials",
+            "Flutter development tutorials",
+            "web design insights",
+            "Nexora blog"
+          ]}
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Blogs", item: "/blogs" }
+          ]}
+          schema={{
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            "name": "Nexora Tech Insights & Engineering Blog",
+            "description": "Articles, insights, and software engineering guides from Nexora Creative Solutions.",
+            "url": "https://nexoracreatives.co.ke/blogs",
+            "publisher": {
+              "@type": "Organization",
+              "name": "Nexora Creative Solutions",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://nexoracreatives.co.ke/ncs.png"
+              }
+            }
+          }}
+        />
       
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

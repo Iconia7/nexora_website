@@ -17,6 +17,11 @@ const Terms = () => {
                 title="Terms of Service | Nexora Creative Solutions"
                 description="Read the Terms and Conditions for using Nexora Creative Solutions' website and software engineering services."
                 url="/terms"
+                image="/ncs.png"
+                breadcrumbs={[
+                    { name: "Home", item: "/" },
+                    { name: "Terms & Conditions", item: "/terms" }
+                ]}
             />
 
             {/* Header */}

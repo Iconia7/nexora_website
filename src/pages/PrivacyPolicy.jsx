@@ -15,8 +15,13 @@ const PrivacyPolicy = () => {
     <div className="pt-20">
       <SEO
         title="Privacy Policy | Nexora Creative Solutions"
-        description="We value your privacy. Read our policy to understand how Nexora protects your enterprise and personal data."
+        description="We value your privacy. Read our policy to understand how Nexora Creative Solutions protects your enterprise and personal data."
         url="/privacy"
+        image="/ncs.png"
+        breadcrumbs={[
+          { name: "Home", item: "/" },
+          { name: "Privacy Policy", item: "/privacy" }
+        ]}
       />
 
       {/* Header */}

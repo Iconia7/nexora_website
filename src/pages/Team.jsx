@@ -106,10 +106,15 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-  title="Meet The Team | Expert Developers in Kenya"
-  description="Get to know the experts behind the code. Our team consists of skilled software engineers, UI/UX designers, and project managers."
-  url="/team"
-/>
+          title="Meet Our Engineering & Design Team | Nexora Creative Solutions"
+          description="Get to know the software engineers, designers, and innovators behind Nexora Creative Solutions delivering exceptional technology in Kenya."
+          url="/team"
+          image="/ncs.png"
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Our Team", item: "/team" }
+          ]}
+        />
 
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

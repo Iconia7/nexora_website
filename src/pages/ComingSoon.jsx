@@ -6,6 +6,8 @@ import { subscribeNewsletter } from '../api';
 import picture from '../assets/newton.jpeg';
 import Logo from '../assets/NCS_Secondary_Logo.png'; 
 
+import SEO from '../components/SEO';
+
 const ComingSoon = () => {
   // 1. Define the missing state variables
   const [email, setEmail] = useState('');
@@ -84,6 +86,12 @@ const ComingSoon = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col md:flex-row font-sans">
+      <SEO 
+        title="Coming Soon | Nexora Creative Solutions"
+        description="We are crafting an extraordinary new digital platform. Stay tuned for Nexora Creative Solutions updates."
+        url="/coming-soon"
+        noindex={true}
+      />
       
       {/* ---------------- LEFT SIDE (Image) ---------------- */}
       <div className="w-full md:w-1/2 relative h-[400px] md:h-screen flex-shrink-0">

@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
 
+# Disallow private utility or non-indexable routes if any
+Disallow: /coming-soon
+
+# Host
+Host: https://nexoracreatives.co.ke
+
+# Sitemaps
 Sitemap: https://nexoracreatives.co.ke/sitemap.xml

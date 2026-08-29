@@ -122,10 +122,43 @@ if (!token) {
   return (
     <div className="pt-20">
         <SEO 
-    title={`${blog.title} | Nexora Insights`}
-    description={`Read about ${blog.title}. ${blog.summary || "Expert insights on tech, coding, and digital growth from Nexora Creative Solutions."}`}
-    url={`/blogs/${blog.id}`}
-  />
+          title={`${blog.title} | Nexora Insights`}
+          description={blog.summary || `Read ${blog.title}. In-depth insights on software development and tech from Nexora Creative Solutions.`}
+          url={`/blogs/${blog.id}`}
+          image={blog.image || "/ncs.png"}
+          type="article"
+          author={blog.author || "Nexora Team"}
+          publishedTime={blog.created_at || blog.date}
+          breadcrumbs={[
+            { name: "Home", item: "/" },
+            { name: "Blogs", item: "/blogs" },
+            { name: blog.title, item: `/blogs/${blog.id}` }
+          ]}
+          schema={{
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": blog.title,
+            "description": blog.summary || blog.title,
+            "image": blog.image ? (blog.image.startsWith("http") ? blog.image : `https://nexoracreatives.co.ke${blog.image}`) : "https://nexoracreatives.co.ke/ncs.png",
+            "author": {
+              "@type": "Person",
+              "name": blog.author || "Nexora Team"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Nexora Creative Solutions",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://nexoracreatives.co.ke/ncs.png"
+              }
+            },
+            "datePublished": blog.created_at || blog.date || "2026-01-01",
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://nexoracreatives.co.ke/blogs/${blog.id}`
+            }
+          }}
+        />
 
       {/* 1. Header Section */}
       <section className="relative py-24 text-center text-white overflow-hidden">

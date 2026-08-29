@@ -74,10 +74,131 @@ const Home = () => {
   return (
     <div className="pt-20 overflow-hidden">
         <SEO 
-  title="Nexora Creative Solutions | Best Web Design & App Development in Kenya"
-  description="Nexora Creative Solutions is a top-rated tech agency in Thika & Nairobi. We specialize in Custom Mobile Apps, Responsive Websites, and Digital Branding."
-  url="/"
-/>
+          title="Nexora Creative Solutions | Best Web Design & App Development in Kenya"
+          description="Nexora Creative Solutions is a top-rated tech agency in Thika & Nairobi, Kenya. We specialize in Custom Mobile Apps, Responsive Websites, UI/UX Design, and Digital Branding."
+          url="/"
+          image="/ncs.png"
+          keywords={[
+            "Nexora Creative Solutions",
+            "Nexora",
+            "Nexora Creatives",
+            "Web Design Kenya",
+            "App Development Nairobi",
+            "Software Development Kenya",
+            "Digital Agency Thika",
+            "UI UX Design Kenya",
+            "Custom Software Kenya"
+          ]}
+          schema={[
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "@id": "https://nexoracreatives.co.ke/#website",
+              "url": "https://nexoracreatives.co.ke/",
+              "name": "Nexora Creative Solutions",
+              "alternateName": ["Nexora", "Nexora Creatives", "NCS", "Nexora Creative Solutions Kenya"],
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://nexoracreatives.co.ke/blogs?search={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              "@id": "https://nexoracreatives.co.ke/#sitelinks",
+              "name": "Main Sitelinks",
+              "description": "Primary navigation links for Nexora Creative Solutions",
+              "itemListElement": [
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 1,
+                  "name": "Services",
+                  "description": "Custom Software, Web & Mobile App Development Services",
+                  "url": "https://nexoracreatives.co.ke/services"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 2,
+                  "name": "Projects",
+                  "description": "Our Portfolio of Deployed Software, Apps, and Digital Solutions",
+                  "url": "https://nexoracreatives.co.ke/projects"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 3,
+                  "name": "Pricing",
+                  "description": "Transparent and Affordable Web & App Development Pricing Packages",
+                  "url": "https://nexoracreatives.co.ke/pricing"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 4,
+                  "name": "Store",
+                  "description": "Official Nexora Developer Merch, Hoodies, and Swag",
+                  "url": "https://nexoracreatives.co.ke/shop"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 5,
+                  "name": "Blogs",
+                  "description": "Tech Insights, Tutorials, and Software Engineering Articles",
+                  "url": "https://nexoracreatives.co.ke/blogs"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 6,
+                  "name": "About Us",
+                  "description": "Learn about Nexora's mission, values, and team",
+                  "url": "https://nexoracreatives.co.ke/about"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 7,
+                  "name": "Contact",
+                  "description": "Get in touch with our team for quotes, consultations, and support",
+                  "url": "https://nexoracreatives.co.ke/contact"
+                },
+                {
+                  "@type": "SiteNavigationElement",
+                  "position": 8,
+                  "name": "Careers",
+                  "description": "Join our innovative engineering and creative design team",
+                  "url": "https://nexoracreatives.co.ke/careers"
+                }
+              ]
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "ProfessionalService",
+              "@id": "https://nexoracreatives.co.ke/#organization",
+              "name": "Nexora Creative Solutions",
+              "alternateName": "Nexora Creatives",
+              "url": "https://nexoracreatives.co.ke/",
+              "logo": "https://nexoracreatives.co.ke/ncs.png",
+              "image": "https://nexoracreatives.co.ke/ncs.png",
+              "description": "Premier tech agency in Kenya specializing in Custom Mobile Apps, Responsive Web Design, UI/UX Design, and Digital Transformation.",
+              "telephone": "+254 115 332 870",
+              "email": "info@nexoracreatives.co.ke",
+              "priceRange": "$$",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Thika",
+                "addressRegion": "Kiambu",
+                "addressCountry": "KE"
+              },
+              "sameAs": [
+                "https://facebook.com/profile.php?id=100083433616499",
+                "https://x.com/newtondesigns_",
+                "https://instagram.com/nexoracreatives_ke",
+                "https://linkedin.com/in/newton-mwangi-9732142a1"
+              ]
+            }
+          ]}
+        />
      {/* Hero Section - Fun & Creative Style */}
       <section className="relative h-[700px] flex items-center justify-center text-center text-white overflow-hidden font-creative">
         

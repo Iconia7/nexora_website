@@ -1,62 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   
+  <!-- Homepage -->
   <url>
     <loc>https://nexoracreatives.co.ke/</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Core Sitelinks Pages -->
   <url>
     <loc>https://nexoracreatives.co.ke/services</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nexoracreatives.co.ke/projects</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nexoracreatives.co.ke/pricing</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://nexoracreatives.co.ke/contact</loc>
-    <lastmod>2025-12-31</lastmod>
+    <loc>https://nexoracreatives.co.ke/shop</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://nexoracreatives.co.ke/about</loc>
-    <lastmod>2025-12-31</lastmod>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nexoracreatives.co.ke/projects</loc>
-    <lastmod>2025-12-31</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nexoracreatives.co.ke/blogs</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nexoracreatives.co.ke/about</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nexoracreatives.co.ke/contact</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nexoracreatives.co.ke/team</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nexoracreatives.co.ke/careers</loc>
-    <lastmod>2025-12-31</lastmod>
-    <priority>0.7</priority>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 
+  <!-- Legal & Policies -->
   <url>
     <loc>https://nexoracreatives.co.ke/privacy</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://nexoracreatives.co.ke/terms</loc>
-    <lastmod>2025-12-31</lastmod>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
-  </urlset>
+</urlset>

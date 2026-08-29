@@ -90,9 +90,28 @@ const About = () => {
     return (
         <div className="pt-20 overflow-hidden">
             <SEO
-                title="About Us | Nexora Creative Solutions"
-                description="Nexora is a premier software engineering and design agency. We architect scalable web platforms, fintech integrations, and enterprise mobile applications."
+                title="About Us | Nexora Creative Solutions | Tech Agency Kenya"
+                description="Learn about Nexora Creative Solutions. We are a premier software engineering and design agency in Kenya architecting scalable web platforms, fintech integrations, and mobile apps."
                 url="/about"
+                image="/ncs.png"
+                keywords={[
+                  "about Nexora",
+                  "software company Kenya",
+                  "tech agency Kenya",
+                  "software engineers Nairobi",
+                  "tech innovators Kenya"
+                ]}
+                breadcrumbs={[
+                  { name: "Home", item: "/" },
+                  { name: "About Us", item: "/about" }
+                ]}
+                schema={{
+                  "@context": "https://schema.org",
+                  "@type": "AboutPage",
+                  "name": "About Nexora Creative Solutions",
+                  "description": "Information about Nexora Creative Solutions, our engineering philosophy, team, and services.",
+                  "url": "https://nexoracreatives.co.ke/about"
+                }}
             />
 
             {/* 1. Header Section */}
