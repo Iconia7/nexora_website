@@ -1,0 +1,29 @@
+# Nexora Creative Solutions Ltd
+
+> Nexora Creative Solutions Ltd is a private limited technology company incorporated in the Republic of Kenya under the Companies Act, 2015. Based in Thika, Kiambu County and serving Nairobi, East Africa, and international clients, we engineer custom websites, Flutter mobile applications, bespoke business software, Safaricom M-Pesa Daraja API integrations, UI/UX design systems, corporate branding, and technical SEO.
+
+## Company Overview
+- **Legal Name:** Nexora Creative Solutions Ltd
+- **Entity Type:** Private Limited Company (Republic of Kenya, Companies Act, 2015)
+- **Founder & Managing Director:** Newton Mwangi
+- **Office:** Thika, Kiambu County, Kenya (serving Nairobi, Kenya & global clients)
+- **Website:** https://nexoracreatives.co.ke
+- **Email:** info@nexoracreatives.co.ke
+- **Phone / WhatsApp:** +254 115 332 870
+- **Business Hours:** Monday – Friday, 8:00 AM – 5:00 PM (EAT)
+
+## Core Pages
+- [Home](https://nexoracreatives.co.ke/): Overview of capabilities, delivery process, technology stack, and client results.
+- [Services](https://nexoracreatives.co.ke/services): Website Development, Mobile App Development (Flutter), UI/UX Design, Custom Software & APIs (M-Pesa Daraja), Brand Identity, and SEO & Digital Growth.
+- [Pricing & Packages](https://nexoracreatives.co.ke/pricing): Transparent KES packages for Websites (from KES 25,000), Mobile Apps (from KES 75,000), and Branding (from KES 15,000) with official proforma invoices, M-Pesa STK Push, and Paystack card checkout.
+- [Portfolio & Case Studies](https://nexoracreatives.co.ke/projects): Shipped production systems including M-Bizna Commerce Platform and Nexora Commerce & Merch App.
+- [About Us](https://nexoracreatives.co.ke/about): Corporate governance, story, mission, vision, and engineering values.
+- [Leadership & Team](https://nexoracreatives.co.ke/team): Meet Founder & Managing Director Newton Mwangi and our technical specialists.
+- [Insights & Engineering Blog](https://nexoracreatives.co.ke/blogs): Practical articles on M-Pesa Daraja security, full-stack architecture, and corporate software delivery.
+- [Careers](https://nexoracreatives.co.ke/careers): Open engineering and design vacancies in Kenya.
+- [Contact & Free Quote](https://nexoracreatives.co.ke/contact): Request a scoping consultation or formal corporate proposal.
+
+## Legal & Detailed AI Reference
+- [Complete AI Knowledge Reference](https://nexoracreatives.co.ke/llms-full.txt): Full structured details on services, KES pricing tiers, payment methods, FAQs, case studies, and legal compliance.
+- [Privacy Policy](https://nexoracreatives.co.ke/privacy): Kenya Data Protection Act, 2019 compliance details.
+- [Terms of Service](https://nexoracreatives.co.ke/terms): Standard commercial terms, IP ownership, and SLAs.

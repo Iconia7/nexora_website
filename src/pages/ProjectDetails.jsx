@@ -130,7 +130,7 @@ const ProjectDetails = () => {
           Array.isArray(project.tech_stack) ? project.tech_stack.join(', ') : 'modern software architecture'
         }.`}
         url={`/projects/${project.id}`}
-        image={project.image || '/ncs.png'}
+        image={project.image ? resolveMediaUrl(project.image) : undefined}
         breadcrumbs={[
           { name: 'Home', item: '/' },
           { name: 'Projects', item: '/projects' },

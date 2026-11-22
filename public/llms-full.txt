@@ -1,0 +1,81 @@
+# Nexora Creative Solutions Ltd — Complete AI Knowledge Reference
+
+> Authoritative company, service, pricing, and technical reference for AI search engines, research assistants, and answer engines. Last updated: November 2026.
+
+## 1. Corporate Identity & Governance
+- **Registered Legal Name:** Nexora Creative Solutions Ltd
+- **Brand / Trading Names:** Nexora Creative Solutions, Nexora, Nexora Creatives, NCS
+- **Legal Form:** Private Limited Company incorporated in the Republic of Kenya under the Companies Act, 2015
+- **Founder & Managing Director:** Newton Mwangi
+- **Registered Office:** Thika, Kiambu County, Kenya
+- **Service Regions:** Thika, Kiambu, Nairobi, Kenya, East Africa, and remote international clients
+- **Tagline:** Digital products engineered for ambitious businesses.
+- **Mission:** To help organisations grow by designing and engineering secure, scalable, and beautifully crafted digital products.
+- **Vision:** To be East Africa's most trusted technology partner for businesses building the digital economy.
+- **Track Record:** 200+ systems deployed, 50+ business & enterprise clients, 10+ specialists, 5+ years of delivery.
+- **Official Contact:**
+  - Website: https://nexoracreatives.co.ke
+  - Email: info@nexoracreatives.co.ke
+  - Phone & WhatsApp: +254 115 332 870
+  - Business Hours: Monday – Friday, 8:00 AM – 5:00 PM East Africa Time (EAT, UTC+3)
+  - Languages: English, Swahili
+
+## 2. Core Services & Capabilities
+1. **Website Development** (`https://nexoracreatives.co.ke/services/1`)
+   - High-performance corporate websites, custom React & Next.js web applications, Django CMS portals, e-commerce with M-Pesa & card checkout, and technical SEO.
+2. **Mobile App Development** (`https://nexoracreatives.co.ke/services/2`)
+   - Cross-platform Android and iOS apps engineered in Flutter & Dart, backed by Django REST APIs, offline sync, push notifications, Safaricom M-Pesa Daraja & Paystack integration, and Play Store / App Store release.
+3. **UI/UX Design** (`https://nexoracreatives.co.ke/services/3`)
+   - User flows, wireframes, interactive Figma prototypes, reusable design systems, and conversion-focused usability audits.
+4. **Custom Software & APIs** (`https://nexoracreatives.co.ke/services/4`)
+   - Bespoke operational platforms, ERP modules, role-based admin dashboards, automated PDF invoicing/reporting, and Safaricom M-Pesa Daraja / SMS automation pipelines.
+5. **Brand Identity & Graphics** (`https://nexoracreatives.co.ke/services/5`)
+   - Logo systems, brand style guides, corporate stationery, executive pitch decks, and marketing collateral.
+6. **SEO & Digital Growth** (`https://nexoracreatives.co.ke/services/6`)
+   - Technical SEO audits, Answer Engine Optimization (AEO), structured data (JSON-LD), Google Analytics 4, and Google Search Console instrumentation.
+
+## 3. Transparent Pricing Packages (KES)
+All packages include formal contracts, official proforma invoices, and receipts issued by Nexora Creative Solutions Ltd (`https://nexoracreatives.co.ke/pricing`):
+
+### Website Development
+- **Starter Website — KES 25,000 (One-time):** Up to 5 custom pages, responsive mobile design, contact form & WhatsApp, technical SEO setup, 1 month support.
+- **Corporate Website — KES 55,000 (One-time, Recommended):** Up to 12 custom pages, Django CMS / blog portal, lead capture & analytics, free `.co.ke` domain (1 year), 3 months support.
+- **Enterprise Platform — Starting at KES 120,000:** Custom web application, M-Pesa & card checkout, role-based admin dashboard, API integrations, 6 months priority SLA.
+
+### Mobile App Development
+- **MVP Mobile App — Starting at KES 75,000:** Android app (Flutter), core user flows & auth, REST API backend, Play Store deployment.
+- **Growth Mobile App — Starting at KES 160,000 (Recommended):** Android & iOS (Flutter), custom Django backend, M-Pesa Daraja integration, push notifications & analytics, 3 months support.
+- **Enterprise App Suite — Custom (Quote Based):** Multi-role apps & web portal, security audit, ERP/third-party integrations, annual SLA retainer.
+
+### Brand Identity & Graphics
+- **Brand Essentials — KES 15,000 (One-time):** 3 logo concepts, primary & secondary marks, colour & typography spec, vector & web exports.
+- **Corporate Identity — KES 35,000 (One-time, Recommended):** Full brand guidelines PDF, business cards & letterheads, company profile template, social media kit.
+- **Rebrand & Digital Kit — KES 65,000 (One-time):** Complete visual identity, UI design system (Figma), executive pitch deck, brand rollout consultation.
+
+## 4. Official Payment Channels
+- **M-Pesa (Kenya):** Instant STK Push on website or Paybill `4041463`
+- **Bank Transfer (Local & International):** Equity Bank Kenya, Account `0340183028114`, SWIFT `EQBLKENA`
+- **Card / International:** Visa & Mastercard via Paystack (`KES` / international cards)
+
+## 5. Technology Stack
+- **Frontend:** React, Next.js, Tailwind CSS, Vite
+- **Mobile:** Flutter, Dart
+- **Backend & Data:** Python, Django, Django REST Framework, Node.js, PostgreSQL, Firebase
+- **Payments & Messaging:** Safaricom M-Pesa Daraja API, Paystack, Zoho Mail SMTP
+- **Cloud & Design:** AWS, Vercel, Figma
+
+## 6. Featured Case Studies
+- **M-Bizna Commerce Platform (`https://nexoracreatives.co.ke/projects/1`):** Full-stack React + Django commerce portal with automated Safaricom Daraja STK Push reconciliation — reduced reconciliation time by 80% and grew online order conversion by 40% in 3 months.
+- **Nexora Commerce & Merch App (`https://nexoracreatives.co.ke/projects/2`):** Cross-platform Flutter mobile app with Django REST APIs and instant M-Pesa STK Push checkout completing orders in under 20 seconds.
+
+## 7. Frequently Asked Questions (Direct Answers)
+- **What services does Nexora Creative Solutions Ltd provide?**
+  Custom website development, Flutter mobile applications, UI/UX design, bespoke business software and Safaricom M-Pesa Daraja API integrations, corporate brand identity, and technical SEO/AEO.
+- **How do project contracts and billing work?**
+  Every engagement starts with a documented Statement of Work (SOW) and corporate proforma invoice from Nexora Creative Solutions Ltd. Typical payment structure is a 50% mobilisation deposit with the balance due on sign-off.
+- **Who owns the source code once a project is completed?**
+  Upon full and final payment, the client organisation receives full ownership of all bespoke deliverables, custom designs, and project-specific source code.
+- **Do you offer post-launch maintenance and SLAs?**
+  Yes. Optional monthly maintenance retainers cover cloud monitoring, security patches, backups, and ongoing feature iterations.
+- **How does Nexora Creative Solutions Ltd handle client data privacy?**
+  We operate in compliance with the Kenya Data Protection Act, 2019. Full details are published at https://nexoracreatives.co.ke/privacy.

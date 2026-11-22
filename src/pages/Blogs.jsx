@@ -117,10 +117,13 @@ const Blogs = () => {
           url: `${COMPANY.siteUrl}/blogs`,
           publisher: {
             '@type': 'Organization',
+            '@id': `${COMPANY.siteUrl}/#organization`,
             name: COMPANY.legalName,
             logo: {
               '@type': 'ImageObject',
-              url: `${COMPANY.siteUrl}/ncs.png`,
+              url: `${COMPANY.siteUrl}/icon-512.png`,
+              width: 512,
+              height: 512,
             },
           },
         }}

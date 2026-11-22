@@ -118,12 +118,26 @@ const TeamDetails = () => {
         title={`${member.name} — ${member.role} | ${COMPANY.legalName}`}
         description={`Meet ${member.name}, ${member.role} at ${COMPANY.legalName}. Dedicated to engineering and design excellence.`}
         url={`/team/${member.id}`}
-        image={member.image || '/ncs.png'}
+        image={member.image ? resolveMediaUrl(member.image) : undefined}
         breadcrumbs={[
           { name: 'Home', item: '/' },
           { name: 'Our Team', item: '/team' },
           { name: member.name, item: `/team/${member.id}` },
         ]}
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: member.name,
+          jobTitle: member.role,
+          description: member.bio || `${member.role} at ${COMPANY.legalName}`,
+          url: `${COMPANY.siteUrl}/team/${member.id}`,
+          ...(member.image ? { image: resolveMediaUrl(member.image) } : {}),
+          worksFor: { '@id': `${COMPANY.siteUrl}/#organization` },
+          ...(Array.isArray(member.skills) && member.skills.length > 0
+            ? { knowsAbout: member.skills.map((s) => s.name) }
+            : {}),
+          sameAs: socialEntries.map(([, url]) => url).filter(Boolean),
+        }}
       />
 
       <PageHeader

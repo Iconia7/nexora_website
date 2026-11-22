@@ -138,34 +138,40 @@ const Services = () => {
           { name: 'Home', item: '/' },
           { name: 'Services', item: '/services' },
         ]}
-        schema={{
-          '@context': 'https://schema.org',
-          '@type': 'ItemList',
-          name: `Services Offered by ${COMPANY.legalName}`,
-          itemListElement: [
-            {
+        schema={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: `Services Offered by ${COMPANY.legalName}`,
+            itemListElement: (services.length > 0
+              ? services
+              : [
+                  { title: 'Website Development', description: 'Modern, fast, and SEO-optimized responsive web applications and portals.' },
+                  { title: 'Mobile App Development', description: 'High-performance iOS and Android mobile apps engineered with Flutter.' },
+                  { title: 'UI/UX Design', description: 'Engaging user interfaces, wireframing, brand identity, and interactive digital experiences.' },
+                ]
+            ).map((svc, idx) => ({
               '@type': 'Service',
-              position: 1,
-              name: 'Custom Mobile App Development',
-              description: 'High-performance iOS and Android mobile apps engineered with Flutter and React Native.',
-              provider: { '@type': 'ProfessionalService', name: COMPANY.legalName },
-            },
-            {
-              '@type': 'Service',
-              position: 2,
-              name: 'Custom Web Application Design & Development',
-              description: 'Modern, fast, and SEO-optimized responsive web applications and portals.',
-              provider: { '@type': 'ProfessionalService', name: COMPANY.legalName },
-            },
-            {
-              '@type': 'Service',
-              position: 3,
-              name: 'UI/UX & Digital Brand Design',
-              description: 'Engaging user interfaces, wireframing, brand identity, and interactive digital experiences.',
-              provider: { '@type': 'ProfessionalService', name: COMPANY.legalName },
-            },
-          ],
-        }}
+              position: idx + 1,
+              name: svc.title,
+              description: svc.description,
+              provider: { '@id': `${COMPANY.siteUrl}/#organization` },
+              areaServed: 'Kenya',
+            })),
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: displayFaqs.map((faq) => ({
+              '@type': 'Question',
+              name: faq.question,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: faq.answer,
+              },
+            })),
+          },
+        ]}
       />
 
       <PageHeader

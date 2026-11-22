@@ -106,17 +106,42 @@ const Careers = () => {
         title={`Careers & Tech Jobs in Kenya | ${COMPANY.legalName}`}
         description={`Explore software engineering, Flutter, web development, and UI/UX design careers at ${COMPANY.legalName} in Kenya.`}
         url="/careers"
-        image="/ncs.png"
         keywords={[
           'tech jobs Kenya',
           'software engineering jobs Nairobi',
           'web developer vacancies Kenya',
-          'Nexora careers',
+          'Nexora Creative Solutions Ltd careers',
         ]}
         breadcrumbs={[
           { name: 'Home', item: '/' },
           { name: 'Careers', item: '/careers' },
         ]}
+        schema={jobs.map((job) => ({
+          '@context': 'https://schema.org',
+          '@type': 'JobPosting',
+          title: job.title,
+          description: `${job.title} (${job.job_type || 'Full-time'}, ${job.experience || 'Experienced'}) at ${COMPANY.legalName} in ${job.location || 'Kenya'}.`,
+          employmentType: (job.job_type || '').toLowerCase().includes('part')
+            ? 'PART_TIME'
+            : (job.job_type || '').toLowerCase().includes('contract')
+              ? 'CONTRACTOR'
+              : 'FULL_TIME',
+          hiringOrganization: {
+            '@type': 'Organization',
+            '@id': `${COMPANY.siteUrl}/#organization`,
+            name: COMPANY.legalName,
+            sameAs: COMPANY.siteUrl,
+            logo: `${COMPANY.siteUrl}/icon-512.png`,
+          },
+          jobLocation: {
+            '@type': 'Place',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: job.location || 'Thika / Nairobi',
+              addressCountry: 'KE',
+            },
+          },
+        }))}
       />
 
       <PageHeader

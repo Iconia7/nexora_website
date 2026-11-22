@@ -1,11 +1,37 @@
+# Robots policy for Nexora Creative Solutions Ltd (https://nexoracreatives.co.ke)
 User-agent: *
 Allow: /
-
-# Disallow private utility or non-indexable routes if any
 Disallow: /coming-soon
 
-# Host
-Host: https://nexoracreatives.co.ke
+# Explicitly welcome AI search & answer engine crawlers (AEO)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /coming-soon
 
-# Sitemaps
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /coming-soon
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /coming-soon
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /coming-soon
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /coming-soon
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /coming-soon
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /coming-soon
+
+# Sitemap & AI Discovery Index
 Sitemap: https://nexoracreatives.co.ke/sitemap.xml
+# LLMs.txt: https://nexoracreatives.co.ke/llms.txt

@@ -118,7 +118,7 @@ const BlogDetails = () => {
           `Read ${blog.title}. Software engineering and digital insights from ${COMPANY.legalName}.`
         }
         url={`/blogs/${blog.id}`}
-        image={blog.image || '/ncs.png'}
+        image={blog.image ? resolveMediaUrl(blog.image) : undefined}
         type="article"
         author={blog.author || COMPANY.legalName}
         publishedTime={blog.created_at || blog.date}
@@ -131,28 +131,35 @@ const BlogDetails = () => {
           '@context': 'https://schema.org',
           '@type': 'BlogPosting',
           headline: blog.title,
-          description: blog.summary || blog.title,
+          description: blog.excerpt || blog.intro || blog.title,
+          articleSection: blog.category || 'Software Engineering',
+          inLanguage: 'en-KE',
           image: blog.image
-            ? blog.image.startsWith('http')
-              ? blog.image
-              : `${COMPANY.siteUrl}${blog.image}`
-            : `${COMPANY.siteUrl}/ncs.png`,
+            ? resolveMediaUrl(blog.image)
+            : `${COMPANY.siteUrl}/og-image.png`,
           author: {
             '@type': 'Person',
             name: blog.author || COMPANY.legalName,
           },
           publisher: {
             '@type': 'Organization',
+            '@id': `${COMPANY.siteUrl}/#organization`,
             name: COMPANY.legalName,
             logo: {
               '@type': 'ImageObject',
-              url: `${COMPANY.siteUrl}/ncs.png`,
+              url: `${COMPANY.siteUrl}/icon-512.png`,
+              width: 512,
+              height: 512,
             },
           },
-          datePublished: blog.created_at || blog.date || '2026-01-01',
+          datePublished: blog.created_at || blog.date || '2026-10-01',
           mainEntityOfPage: {
             '@type': 'WebPage',
             '@id': `${COMPANY.siteUrl}/blogs/${blog.id}`,
+          },
+          speakable: {
+            '@type': 'SpeakableSpecification',
+            cssSelector: ['h1', '.lead'],
           },
         }}
       />

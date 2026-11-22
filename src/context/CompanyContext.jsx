@@ -95,20 +95,26 @@ export const CompanyProvider = ({ children }) => {
 
     const organizationSchema = () => ({
       '@context': 'https://schema.org',
-      '@type': 'ProfessionalService',
+      '@type': ['Organization', 'ProfessionalService'],
       '@id': `${company.siteUrl}/#organization`,
-      name: company.brandName,
+      name: company.legalName,
       legalName: company.legalName,
-      alternateName: ['Nexora', 'Nexora Creatives', 'NCS', company.legalName],
+      alternateName: [company.brandName, 'Nexora', 'Nexora Creatives', 'NCS'],
       url: `${company.siteUrl}/`,
-      logo: `${company.siteUrl}/ncs.png`,
-      image: `${company.siteUrl}/ncs.png`,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${company.siteUrl}/icon-512.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${company.siteUrl}/og-image.png`,
       description: company.description,
+      slogan: company.tagline,
       telephone: company.phone,
       email: company.email,
-      priceRange: '$$',
+      priceRange: 'KES 15,000 - KES 160,000+',
       founder: company.directors[0]
-        ? { '@type': 'Person', name: company.directors[0].name }
+        ? { '@type': 'Person', name: company.directors[0].name, jobTitle: company.directors[0].role }
         : undefined,
       address: {
         '@type': 'PostalAddress',
@@ -118,6 +124,19 @@ export const CompanyProvider = ({ children }) => {
         postalCode: company.registeredOffice.postal || undefined,
         addressCountry: 'KE',
       },
+      areaServed: ['Thika', 'Nairobi', 'Kiambu County', 'Kenya', 'East Africa'],
+      knowsAbout: [
+        'Custom Software Development',
+        'Website Development',
+        'Mobile App Development',
+        'Flutter',
+        'React',
+        'Django',
+        'Safaricom M-Pesa Daraja API Integration',
+        'UI/UX Design',
+        'Corporate Brand Identity',
+        'Technical SEO & AEO',
+      ],
       sameAs: Object.values(company.socials).filter(Boolean),
     });
 

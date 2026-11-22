@@ -8,7 +8,7 @@ export default function SEO({
   url = '/',
   image,
   type = 'website',
-  keywords = 'Nexora, Nexora Creative Solutions, Nexora Creative Solutions Ltd, web design Kenya, mobile app development Nairobi, software company Thika, tech company Kenya',
+  keywords = 'Nexora Creative Solutions Ltd, Nexora Creative Solutions, Nexora, web design Kenya, mobile app development Nairobi, software company Thika, M-Pesa Daraja API integration, custom software Kenya',
   author,
   publishedTime,
   modifiedTime,
@@ -18,18 +18,19 @@ export default function SEO({
 }) {
   const { company } = useCompany();
   const SITE_URL = company.siteUrl;
-  const DEFAULT_IMAGE = `${SITE_URL}/ncs.png`;
+  const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
   const SITE_NAME = company.legalName;
 
-  const resolvedTitle = title || `${company.brandName} | Web, App & Software Development Company in Kenya`;
+  const resolvedTitle = title || `${SITE_NAME} | Web, App & Software Development Company in Kenya`;
   const resolvedDescription = description || company.description;
-  const resolvedAuthor = author || company.legalName;
-  const resolvedImage = image || DEFAULT_IMAGE;
+  const resolvedAuthor = author || SITE_NAME;
+  const resolvedImage = !image || image === '/ncs.png' ? DEFAULT_IMAGE : image;
 
   const fullUrl = url.startsWith('http') ? url : `${SITE_URL}${url.startsWith('/') ? url : `/${url}`}`;
   const fullImageUrl = resolvedImage.startsWith('http')
     ? resolvedImage
     : `${SITE_URL}${resolvedImage.startsWith('/') ? resolvedImage : `/${resolvedImage}`}`;
+  const isDefaultOg = fullImageUrl === DEFAULT_IMAGE;
 
   let breadcrumbsSchema = null;
   if (breadcrumbs && Array.isArray(breadcrumbs) && breadcrumbs.length > 0) {
@@ -40,7 +41,9 @@ export default function SEO({
         '@type': 'ListItem',
         position: index + 1,
         name: crumb.name,
-        item: crumb.item.startsWith('http') ? crumb.item : `${SITE_URL}${crumb.item.startsWith('/') ? crumb.item : `/${crumb.item}`}`,
+        item: crumb.item.startsWith('http')
+          ? crumb.item
+          : `${SITE_URL}${crumb.item.startsWith('/') ? crumb.item : `/${crumb.item}`}`,
       })),
     };
   }
@@ -51,7 +54,7 @@ export default function SEO({
   }
   if (schema) {
     if (Array.isArray(schema)) {
-      schemasToRender.push(...schema);
+      schemasToRender.push(...schema.filter(Boolean));
     } else {
       schemasToRender.push(schema);
     }
@@ -61,19 +64,27 @@ export default function SEO({
 
   return (
     <Helmet>
-      {/* 1. Standard Metadata */}
+      {/* 1. Standard Metadata & Site Name */}
       <title>{resolvedTitle}</title>
       <meta name="title" content={resolvedTitle} />
+      <meta name="application-name" content={SITE_NAME} />
+      <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
       <meta name="description" content={resolvedDescription} />
       {keywordsString && <meta name="keywords" content={keywordsString} />}
       <meta name="author" content={resolvedAuthor} />
+      <meta name="publisher" content={SITE_NAME} />
       <meta
         name="robots"
-        content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'}
+        content={
+          noindex
+            ? 'noindex, nofollow'
+            : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
+        }
       />
 
-      {/* 2. Canonical URL */}
+      {/* 2. Canonical & AI Discovery */}
       <link rel="canonical" href={fullUrl} />
+      <link rel="alternate" type="text/plain" title="LLMs.txt" href={`${SITE_URL}/llms.txt`} />
 
       {/* 3. Open Graph */}
       <meta property="og:site_name" content={SITE_NAME} />
@@ -82,13 +93,16 @@ export default function SEO({
       <meta property="og:title" content={resolvedTitle} />
       <meta property="og:description" content={resolvedDescription} />
       <meta property="og:image" content={fullImageUrl} />
+      {isDefaultOg && <meta property="og:image:type" content="image/png" />}
+      {isDefaultOg && <meta property="og:image:width" content="1200" />}
+      {isDefaultOg && <meta property="og:image:height" content="630" />}
       <meta property="og:image:alt" content={resolvedTitle} />
       <meta property="og:locale" content="en_KE" />
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
       {resolvedAuthor && type === 'article' && <meta property="article:author" content={resolvedAuthor} />}
 
-      {/* 4. Twitter Card */}
+      {/* 4. X / Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:url" content={fullUrl} />
       <meta name="twitter:site" content="@newtondesigns_" />

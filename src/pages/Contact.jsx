@@ -96,39 +96,26 @@ const Contact = () => {
   return (
     <div>
       <SEO
-        title="Contact Us | Free Consultation & Quote | Nexora Creative Solutions"
-        description="Ready to start your digital project? Contact Nexora Creative Solutions in Thika & Nairobi. Call +254 115 332 870 or email info@nexoracreatives.co.ke."
+        title={`Contact Us | Free Consultation & Quote | ${COMPANY.legalName}`}
+        description={`Ready to start your digital project? Contact ${COMPANY.legalName} in Thika & Nairobi. Call ${COMPANY.phone} or email ${COMPANY.email}.`}
         url="/contact"
-        image="/ncs.png"
         keywords={[
-          "contact Nexora",
-          "hire developers Kenya",
-          "web design quote Nairobi",
-          "app development consultation Thika"
+          'contact Nexora Creative Solutions Ltd',
+          'hire developers Kenya',
+          'web design quote Nairobi',
+          'app development consultation Thika',
         ]}
         breadcrumbs={[
-          { name: "Home", item: "/" },
-          { name: "Contact Us", item: "/contact" }
+          { name: 'Home', item: '/' },
+          { name: 'Contact Us', item: '/contact' },
         ]}
         schema={{
-          "@context": "https://schema.org",
-          "@type": "ContactPage",
-          "name": "Contact Nexora Creative Solutions",
-          "description": "Get in touch with Nexora Creative Solutions for software development inquiries and project quotes.",
-          "url": "https://nexoracreatives.co.ke/contact",
-          "mainEntity": {
-            "@type": "ProfessionalService",
-            "name": "Nexora Creative Solutions",
-            "legalName": COMPANY.legalName,
-            "telephone": "+254 115 332 870",
-            "email": "info@nexoracreatives.co.ke",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "Thika",
-              "addressRegion": "Kiambu",
-              "addressCountry": "KE"
-            }
-          }
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: `Contact ${COMPANY.legalName}`,
+          description: `Get in touch with ${COMPANY.legalName} for software development inquiries and project quotes.`,
+          url: `${COMPANY.siteUrl}/contact`,
+          mainEntity: { '@id': `${COMPANY.siteUrl}/#organization` },
         }}
       />
 

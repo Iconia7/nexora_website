@@ -376,19 +376,24 @@ const Pricing = () => {
         schema={{
           '@context': 'https://schema.org',
           '@type': 'OfferCatalog',
-          name: `${COMPANY.legalName} Software and Web Design Packages`,
-          itemListElement: [
-            {
-              '@type': 'Offer',
-              itemOffered: { '@type': 'Service', name: 'Website Development Packages' },
-              priceCurrency: 'KES',
-            },
-            {
-              '@type': 'Offer',
-              itemOffered: { '@type': 'Service', name: 'Mobile App Development Packages' },
-              priceCurrency: 'KES',
-            },
-          ],
+          name: `${COMPANY.legalName} Software, Web & Branding Packages`,
+          provider: { '@id': `${COMPANY.siteUrl}/#organization` },
+          itemListElement: Object.entries(pricingData).flatMap(([category, plans]) =>
+            plans.map((p) => {
+              const numericPrice = String(p.price || '').replace(/,/g, '');
+              const isNumeric = /^\d+(\.\d+)?$/.test(numericPrice);
+              return {
+                '@type': 'Offer',
+                name: `${p.plan} (${category})`,
+                description: Array.isArray(p.features) ? p.features.join(', ') : category,
+                priceCurrency: 'KES',
+                ...(isNumeric ? { price: numericPrice } : {}),
+                availability: 'https://schema.org/InStock',
+                seller: { '@id': `${COMPANY.siteUrl}/#organization` },
+                itemOffered: { '@type': 'Service', name: p.plan, serviceType: category },
+              };
+            })
+          ),
         }}
       />
 

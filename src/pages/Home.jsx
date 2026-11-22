@@ -32,7 +32,7 @@ const process = [
 const techStack = ['React', 'Next.js', 'Flutter', 'Node.js', 'Django', 'PostgreSQL', 'Firebase', 'M-Pesa Daraja', 'AWS', 'Figma'];
 
 const Home = () => {
-  const { company: COMPANY, organizationSchema } = useCompany();
+  const { company: COMPANY } = useCompany();
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -75,32 +75,29 @@ const Home = () => {
   return (
     <div className="overflow-hidden">
       <SEO
-        title={`${COMPANY.brandName} | Web, App & Software Development Company in Kenya`}
-        description={`${COMPANY.legalName} is a Kenyan technology company in Thika & Nairobi delivering custom software, web and mobile applications, UI/UX design and digital branding.`}
+        title={`${COMPANY.legalName} | Web, App & Software Development Company in Kenya`}
+        description={`${COMPANY.legalName} is a Kenyan private limited technology company in Thika & Nairobi delivering custom software, web and mobile applications, M-Pesa Daraja integrations, UI/UX design and digital branding.`}
         url="/"
-        image="/ncs.png"
         keywords={[
-          'Nexora Creative Solutions', 'Nexora Creative Solutions Ltd', 'Nexora', 'Nexora Creatives',
+          'Nexora Creative Solutions Ltd', 'Nexora Creative Solutions', 'Nexora', 'Nexora Creatives',
           'Web Design Kenya', 'App Development Nairobi', 'Software Development Company Kenya',
-          'Digital Agency Thika', 'UI UX Design Kenya', 'Custom Software Kenya',
+          'M-Pesa Daraja API Integration', 'Digital Agency Thika', 'UI UX Design Kenya', 'Custom Software Kenya',
         ]}
-        schema={[
-          {
-            '@context': 'https://schema.org',
-            '@type': 'WebSite',
-            '@id': `${COMPANY.siteUrl}/#website`,
-            url: `${COMPANY.siteUrl}/`,
-            name: COMPANY.brandName,
-            alternateName: ['Nexora', 'Nexora Creatives', 'NCS', COMPANY.legalName],
-            publisher: { '@id': `${COMPANY.siteUrl}/#organization` },
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: { '@type': 'EntryPoint', urlTemplate: `${COMPANY.siteUrl}/blogs?search={search_term_string}` },
-              'query-input': 'required name=search_term_string',
-            },
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          '@id': `${COMPANY.siteUrl}/#webpage`,
+          url: `${COMPANY.siteUrl}/`,
+          name: `${COMPANY.legalName} | Web, App & Software Development Company in Kenya`,
+          description: COMPANY.description,
+          isPartOf: { '@id': `${COMPANY.siteUrl}/#website` },
+          about: { '@id': `${COMPANY.siteUrl}/#organization` },
+          inLanguage: 'en-KE',
+          speakable: {
+            '@type': 'SpeakableSpecification',
+            cssSelector: ['h1', '.lead'],
           },
-          organizationSchema(),
-        ]}
+        }}
       />
 
       {/* ───────────────── Hero ───────────────── */}
