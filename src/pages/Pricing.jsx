@@ -11,6 +11,33 @@ import SEO from '../components/SEO';
 import PageHeader from '../components/ui/PageHeader';
 import CTASection from '../components/ui/CTASection';
 import { useCompany } from '../context/CompanyContext';
+import ncsLogoDark from '../assets/ncs_logo_dark_bg.png';
+
+const KRA_PIN_REGEX = /^[AP]\d{9}[A-Z]$/i;
+
+const loadLogoDataUrl = (src) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve({
+          dataUrl: canvas.toDataURL('image/png'),
+          width: canvas.width,
+          height: canvas.height,
+        });
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
 
 const Pricing = () => {
   const { company: COMPANY, formatAddress } = useCompany();
@@ -23,7 +50,14 @@ const Pricing = () => {
   const [orderLoading, setOrderLoading] = useState(false);
 
   const captchaRef = useRef(null);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', mpesaCode: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    mpesaCode: '',
+    requiresEtims: false,
+    kraPin: '',
+  });
   const [status, setStatus] = useState('idle');
 
   useEffect(() => {
@@ -69,11 +103,27 @@ const Pricing = () => {
 
   const initializePayment = usePaystackPayment(paystackConfig);
 
-  const handleCardPay = () => {
+  const validateContactAndTax = () => {
     if (!formData.name || !formData.email || !formData.phone) {
-      toast.error('Please fill contact details first.');
-      return;
+      toast.error('Please fill in your contact details first.');
+      return false;
     }
+    if (formData.requiresEtims) {
+      const cleanedPin = formData.kraPin.trim().toUpperCase();
+      if (!cleanedPin) {
+        toast.error('Please enter your Company / Buyer KRA PIN for eTIMS.');
+        return false;
+      }
+      if (!KRA_PIN_REGEX.test(cleanedPin)) {
+        toast.error('Enter a valid KRA PIN (e.g. P051234567X or A001234567X).');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleCardPay = () => {
+    if (!validateContactAndTax()) return;
     setOrderLoading(true);
     initializePayment(onPaystackSuccess, onPaystackClose);
   };
@@ -84,138 +134,276 @@ const Pricing = () => {
     setStatus('idle');
   };
 
-  const generatePDF = (docType, paymentDetails) => {
+  const generatePDF = async (docType, paymentDetails) => {
     const doc = new jsPDF();
-    const date = new Date().toLocaleDateString();
+    const date = new Date().toLocaleDateString('en-KE', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
     const isReceipt = docType === 'Receipt';
+    const buyerPin = formData.requiresEtims ? formData.kraPin.trim().toUpperCase() : '';
+    const isNumericPrice = selectedPlan.price !== 'Custom' && selectedPlan.price !== 'Quote Based';
+    const amountLabel = isNumericPrice ? `KES ${selectedPlan.price}` : String(selectedPlan.price);
 
-    // 1. Header & Branding
+    // 1. Branded Deep Navy Header with Embedded NCS Logo + Crimson Accent Rule
     doc.setFillColor(2, 2, 48);
-    doc.rect(0, 0, 210, 42, 'F');
+    doc.rect(0, 0, 210, 44, 'F');
+    doc.setFillColor(167, 0, 42);
+    doc.rect(0, 44, 210, 2.2, 'F');
 
+    const logoInfo = await loadLogoDataUrl(ncsLogoDark);
+    if (logoInfo?.dataUrl) {
+      const targetW = 54;
+      const targetH = Number(((logoInfo.height / logoInfo.width) * targetW).toFixed(2));
+      doc.addImage(logoInfo.dataUrl, 'PNG', 18, 12, targetW, targetH);
+    } else {
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(COMPANY.legalName.toUpperCase(), 18, 24);
+    }
+
+    // Right-aligned corporate header details
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
+    doc.setFontSize(10.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(COMPANY.legalName.toUpperCase(), 20, 23);
-    doc.setFontSize(9.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${formatAddress()} | ${COMPANY.email} | ${COMPANY.phone}`, 20, 34);
+    doc.text(COMPANY.legalName, 192, 16, { align: 'right' });
 
-    // 2. Document Title & Status
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(215, 222, 238);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatAddress(), 192, 22, { align: 'right' });
+    doc.text(`${COMPANY.email}  |  ${COMPANY.phone}`, 192, 27.5, { align: 'right' });
+    const regLine = [
+      COMPANY.registrationNumber ? `Reg: ${COMPANY.registrationNumber}` : '',
+      COMPANY.kraPin ? `KRA PIN: ${COMPANY.kraPin}` : '',
+    ]
+      .filter(Boolean)
+      .join('  |  ');
+    if (regLine) {
+      doc.text(regLine, 192, 33, { align: 'right' });
+    } else {
+      doc.text(COMPANY.siteUrl.replace(/^https?:\/\//, ''), 192, 33, { align: 'right' });
+    }
+
+    // 2. Document Title & Status Pill
+    doc.setTextColor(14, 16, 36);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(isReceipt ? 'OFFICIAL RECEIPT' : 'PROFORMA INVOICE', 135, 60);
+    doc.text(isReceipt ? 'OFFICIAL RECEIPT' : 'PROFORMA INVOICE', 192, 60, { align: 'right' });
 
     if (isReceipt) {
-      doc.setTextColor(22, 163, 74);
-      doc.setFontSize(13);
-      doc.text('STATUS: PAID', 135, 70);
+      doc.setFillColor(236, 253, 245);
+      doc.roundedRect(156, 64, 36, 8, 2, 2, 'F');
+      doc.setTextColor(4, 120, 87);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STATUS: PAID', 174, 69.5, { align: 'center' });
     } else {
+      doc.setFillColor(252, 232, 236);
+      doc.roundedRect(150, 64, 42, 8, 2, 2, 'F');
       doc.setTextColor(167, 0, 42);
-      doc.setFontSize(13);
-      doc.text('STATUS: UNPAID', 135, 70);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('STATUS: UNPAID', 171, 69.5, { align: 'center' });
     }
 
-    // 3. Billing Details
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
+    doc.setTextColor(75, 80, 104);
+    doc.setFontSize(9.5);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Date: ${date}`, 135, 80);
-    doc.text(`Ref: ${paymentDetails.ref}`, 135, 85);
+    doc.text(`Date: ${date}`, 192, 80, { align: 'right' });
+    doc.text(`Reference: ${paymentDetails.ref}`, 192, 85.5, { align: 'right' });
 
+    // 3. Bill To
+    doc.setTextColor(167, 0, 42);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('Bill To:', 20, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formData.name.toUpperCase(), 20, 66);
-    doc.text(formData.email, 20, 71);
-    doc.text(formData.phone, 20, 76);
+    doc.text('BILL TO', 18, 58);
 
-    // 4. Line Items
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, 95, 190, 95);
+    doc.setTextColor(14, 16, 36);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('Service Description', 20, 102);
-    doc.text('Amount (KES)', 160, 102);
-    doc.line(20, 105, 190, 105);
+    doc.text(formData.name.toUpperCase(), 18, 65);
+
+    doc.setTextColor(75, 80, 104);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formData.email, 18, 71);
+    doc.text(formData.phone, 18, 76.5);
+    if (buyerPin) {
+      doc.setTextColor(2, 2, 48);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Buyer KRA PIN (eTIMS): ${buyerPin}`, 18, 82.5);
+    }
+
+    // 4. Line Items Table
+    const tableTop = 96;
+    doc.setFillColor(246, 247, 251);
+    doc.setDrawColor(230, 232, 240);
+    doc.rect(18, tableTop, 174, 10, 'FD');
+
+    doc.setTextColor(14, 16, 36);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SERVICE DESCRIPTION', 22, tableTop + 6.5);
+    doc.text('AMOUNT', 188, tableTop + 6.5, { align: 'right' });
 
     doc.setFont('helvetica', 'normal');
-    doc.text(`${selectedPlan.plan} (${selectedPlan.category})`, 20, 115);
-    doc.text(String(selectedPlan.price), 160, 115);
+    doc.setFontSize(10.5);
+    doc.setTextColor(14, 16, 36);
+    doc.text(`${selectedPlan.plan} (${selectedPlan.category})`, 22, tableTop + 19);
+    doc.setFont('helvetica', 'bold');
+    doc.text(amountLabel, 188, tableTop + 19, { align: 'right' });
 
+    let nextY = tableTop + 26;
     if (isReceipt) {
       doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Paid via: ${paymentDetails.method === 'card' ? 'Visa/Mastercard' : 'M-Pesa'}`, 20, 122);
-      doc.text(`Transaction ID: ${paymentDetails.mpesaCode}`, 20, 127);
-      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 106, 128);
+      doc.text(
+        `Paid via: ${paymentDetails.method === 'card' ? 'Visa / Mastercard (Paystack)' : 'M-Pesa (Safaricom)'}`,
+        22,
+        nextY
+      );
+      doc.text(`Transaction ID: ${paymentDetails.mpesaCode}`, 22, nextY + 5.5);
+      nextY += 13;
     }
 
-    // 5. Totals
-    doc.line(20, 135, 190, 135);
-    doc.setFontSize(12);
+    // 5. Total Bar
+    doc.setDrawColor(2, 2, 48);
+    doc.setLineWidth(0.6);
+    doc.line(18, nextY + 4, 192, nextY + 4);
+    doc.setLineWidth(0.2);
+
+    doc.setFontSize(11.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total Amount:', 120, 145);
-    doc.setTextColor(2, 2, 48);
-    doc.text(`KES ${selectedPlan.price}`, 160, 145);
+    doc.setTextColor(14, 16, 36);
+    doc.text(isReceipt ? 'TOTAL PAID:' : 'TOTAL AMOUNT DUE:', 110, nextY + 13);
+    doc.setTextColor(isReceipt ? 4 : 167, isReceipt ? 120 : 0, isReceipt ? 87 : 42);
+    doc.text(amountLabel, 188, nextY + 13, { align: 'right' });
 
-    // 6. Payment Footer
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Thank you for doing business with ${COMPANY.legalName}.`, 20, 160);
+    let cursorY = nextY + 24;
 
-    if (!isReceipt) {
-      doc.setDrawColor(0, 0, 0);
-      doc.line(20, 165, 190, 165);
+    // 6. KRA eTIMS Notice (when requested)
+    if (buyerPin) {
+      doc.setFillColor(246, 247, 251);
+      doc.setDrawColor(2, 2, 48);
+      doc.roundedRect(18, cursorY, 174, 20, 2, 2, 'FD');
+      doc.setFillColor(167, 0, 42);
+      doc.rect(18, cursorY, 2.5, 20, 'F');
 
+      doc.setTextColor(2, 2, 48);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('PAYMENT INSTRUCTIONS:', 20, 175);
+      doc.text('KRA eTIMS TAX INVOICE / RECEIPT REQUESTED', 24, cursorY + 6.5);
 
-      doc.setFont('helvetica', 'bold');
-      doc.text('KENYA (M-PESA)', 20, 182);
+      doc.setTextColor(75, 80, 104);
+      doc.setFontSize(8.2);
       doc.setFont('helvetica', 'normal');
-      doc.text('Paybill: 4041463', 20, 188);
-      doc.text(`Account: ${selectedPlan.plan.substring(0, 12).toUpperCase()}`, 20, 194);
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('INTERNATIONAL (BANK)', 110, 182);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Bank: Equity Bank Kenya', 110, 188);
-      doc.text('Acc: 0340183028114', 110, 194);
-      doc.text('Swift: EQBLKENA', 110, 200);
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('OR PAY ONLINE (CARD):', 110, 210);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 255);
-      doc.text(PAYSTACK_PAGE_LINK, 110, 216);
-      doc.setTextColor(0, 0, 0);
+      doc.text(
+        `Buyer KRA PIN ${buyerPin} recorded. This instant PDF is a commercial ${isReceipt ? 'payment receipt' : 'proforma invoice'}.`,
+        24,
+        cursorY + 12
+      );
+      doc.text(
+        'Our accounts desk will email your signed KRA eTIMS tax invoice (with CU Number & QR code) upon confirmation.',
+        24,
+        cursorY + 16.5
+      );
+      cursorY += 27;
     }
 
-    doc.setFontSize(8);
-    doc.setTextColor(120, 120, 120);
-    doc.text(`${COMPANY.legalName} — Private Limited Company incorporated in the Republic of Kenya.`, 20, 282);
+    // 7. Payment Instructions (Proforma Invoice)
+    if (!isReceipt) {
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(230, 232, 240);
+      doc.roundedRect(18, cursorY, 174, 52, 2, 2, 'FD');
+      doc.setFillColor(2, 2, 48);
+      doc.rect(18, cursorY, 2.5, 52, 'F');
+
+      doc.setTextColor(2, 2, 48);
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('OFFICIAL PAYMENT INSTRUCTIONS', 24, cursorY + 8);
+
+      // Left column — M-Pesa
+      doc.setFontSize(8.8);
+      doc.setTextColor(14, 16, 36);
+      doc.setFont('helvetica', 'bold');
+      doc.text('KENYA (M-PESA PAYBILL)', 24, cursorY + 16);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(75, 80, 104);
+      doc.text('Paybill: 4041463', 24, cursorY + 22);
+      doc.text(`Account: ${selectedPlan.plan.substring(0, 12).toUpperCase()}`, 24, cursorY + 27.5);
+
+      // Right column — KCB Bank
+      doc.setDrawColor(230, 232, 240);
+      doc.line(102, cursorY + 12, 102, cursorY + 34);
+
+      doc.setTextColor(14, 16, 36);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BANK TRANSFER (LOCAL & INT\'L)', 108, cursorY + 16);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(75, 80, 104);
+      doc.text('Bank: KCB Bank', 108, cursorY + 22);
+      doc.text(`Account Name: ${COMPANY.legalName}`, 108, cursorY + 27.5);
+      doc.text('Account No: 1358337365   |   SWIFT: KCBLKENX', 108, cursorY + 33);
+
+      // Bottom strip — Paystack
+      doc.line(24, cursorY + 38, 186, cursorY + 38);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(14, 16, 36);
+      doc.text('PAY ONLINE (CARD):', 24, cursorY + 45.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(167, 0, 42);
+      doc.text(PAYSTACK_PAGE_LINK, 62, cursorY + 45.5);
+      cursorY += 59;
+    }
+
+    doc.setFontSize(9.5);
+    doc.setTextColor(75, 80, 104);
+    doc.text(`Thank you for doing business with ${COMPANY.legalName}.`, 18, Math.min(cursorY + 6, 265));
+
+    // 8. Corporate Ltd Footer
+    doc.setDrawColor(230, 232, 240);
+    doc.line(18, 275, 192, 275);
+    doc.setFontSize(7.8);
+    doc.setTextColor(122, 127, 150);
+    doc.text(
+      `${COMPANY.legalName} — Private Limited Company incorporated in the Republic of Kenya under the Companies Act, 2015.`,
+      18,
+      281
+    );
+    doc.text(`${formatAddress()}  |  ${COMPANY.email}  |  ${COMPANY.phone}`, 18, 286);
 
     return doc;
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setFormData({ name: '', email: '', phone: '', mpesaCode: '' });
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      mpesaCode: '',
+      requiresEtims: false,
+      kraPin: '',
+    });
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, type, value, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : name === 'kraPin' ? value.toUpperCase() : value,
+    }));
   };
 
   const handleInvoice = (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.phone) {
-      toast.error('Please fill in your contact details first.');
-      return;
-    }
+    if (!validateContactAndTax()) return;
 
     const token = captchaRef.current?.getValue();
     if (!token) {
@@ -230,10 +418,7 @@ const Pricing = () => {
   const handleMpesaPay = async (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.phone) {
-      toast.error('Please fill in your contact details first.');
-      return;
-    }
+    if (!validateContactAndTax()) return;
 
     const token = captchaRef.current?.getValue();
     if (!token) {
@@ -261,6 +446,8 @@ const Pricing = () => {
         customer_name: formData.name,
         customer_email: formData.email,
         accountRef: accountRefName,
+        requires_etims: formData.requiresEtims,
+        customer_kra_pin: formData.requiresEtims ? formData.kraPin.trim().toUpperCase() : '',
       });
 
       if (res.data.ResponseCode === '0') {
@@ -313,7 +500,7 @@ const Pricing = () => {
       const docType = isPaid ? 'Receipt' : 'Invoice';
       const refNumber = isPaid ? receiptRef : `INV-${Math.floor(Math.random() * 10000)}`;
 
-      const pdfDoc = generatePDF(docType, {
+      const pdfDoc = await generatePDF(docType, {
         ref: refNumber,
         mpesaCode: receiptRef,
         method: methodUsed,
@@ -336,6 +523,8 @@ const Pricing = () => {
             doc_type: docType,
             ref_code: refNumber,
             paystack_link: PAYSTACK_PAGE_LINK,
+            requires_etims: formData.requiresEtims,
+            customer_kra_pin: formData.requiresEtims ? formData.kraPin.trim().toUpperCase() : '',
           });
         } catch (notifyErr) {
           console.warn('Billing email notification skipped:', notifyErr);
@@ -613,6 +802,9 @@ const Pricing = () => {
                     <h4 className="font-display text-lg font-bold text-ink">Order confirmed</h4>
                     <p className="mt-2 text-sm text-ink-muted">
                       Your PDF document has been downloaded and a copy sent to {formData.email}.
+                      {formData.requiresEtims && formData.kraPin && (
+                        <> Our accounts desk has recorded KRA PIN <strong>{formData.kraPin.toUpperCase()}</strong> and will issue your signed KRA eTIMS tax invoice shortly.</>
+                      )}
                     </p>
                   </div>
                 ) : (
@@ -642,6 +834,36 @@ const Pricing = () => {
                         onChange={handleChange}
                         className="input !py-2.5 text-sm"
                       />
+
+                      {/* KRA eTIMS Tax Invoice Option */}
+                      <div className="rounded-xl border border-line bg-brand-light/50 p-3 space-y-2.5">
+                        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            name="requiresEtims"
+                            checked={formData.requiresEtims}
+                            onChange={handleChange}
+                            className="mt-0.5 h-4 w-4 rounded border-line text-brand-rose focus:ring-brand-rose accent-brand-rose"
+                          />
+                          <span className="text-xs leading-snug text-ink">
+                            <strong className="font-semibold">Request KRA eTIMS Tax Invoice / Receipt</strong>
+                            <span className="block text-[11px] text-ink-subtle mt-0.5">
+                              For Kenyan businesses claiming tax-deductible expenses.
+                            </span>
+                          </span>
+                        </label>
+                        {formData.requiresEtims && (
+                          <input
+                            type="text"
+                            name="kraPin"
+                            maxLength={11}
+                            placeholder="Company / Buyer KRA PIN * (e.g. P051234567X)"
+                            value={formData.kraPin}
+                            onChange={handleChange}
+                            className="input !py-2 text-xs uppercase tracking-wider font-mono"
+                          />
+                        )}
+                      </div>
                     </div>
 
                     {/* Payment Method Selector */}

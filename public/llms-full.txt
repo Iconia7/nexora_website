@@ -52,10 +52,11 @@ All packages include formal contracts, official proforma invoices, and receipts 
 - **Corporate Identity — KES 35,000 (One-time, Recommended):** Full brand guidelines PDF, business cards & letterheads, company profile template, social media kit.
 - **Rebrand & Digital Kit — KES 65,000 (One-time):** Complete visual identity, UI design system (Figma), executive pitch deck, brand rollout consultation.
 
-## 4. Official Payment Channels
+## 4. Official Payment Channels & KRA eTIMS Billing
 - **M-Pesa (Kenya):** Instant STK Push on website or Paybill `4041463`
-- **Bank Transfer (Local & International):** Equity Bank Kenya, Account `0340183028114`, SWIFT `EQBLKENA`
+- **Bank Transfer (Local & International):** KCB Bank, Account Name: `Nexora Creative Solutions Ltd`, Account Number: `1358337365`, SWIFT: `KCBLKENX`
 - **Card / International:** Visa & Mastercard via Paystack (`KES` / international cards)
+- **KRA eTIMS Tax Invoices & Receipts:** Available for Kenyan B2B and corporate clients — simply check "Request KRA eTIMS Tax Invoice / Receipt" and enter your Buyer KRA PIN during checkout.
 
 ## 5. Technology Stack
 - **Frontend:** React, Next.js, Tailwind CSS, Vite
