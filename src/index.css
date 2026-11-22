@@ -1,11 +1,176 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-body {
-  /* Body is White, Default text is the new Brand Rose (Red) */
-  @apply bg-white text-brand-rose;
+  body {
+    @apply bg-white text-ink-muted font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-brand-rose text-white;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-rose ring-offset-2;
+  }
+}
+
+@layer components {
+
+  /* Layout */
+  .container-site {
+    @apply max-w-site mx-auto px-5 sm:px-8;
+  }
+
+  .section {
+    @apply py-20 md:py-28;
+  }
+
+  /* Typography */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-brand-rose;
+  }
+
+  .eyebrow::before {
+    content: '';
+    @apply block w-6 h-px bg-current;
+  }
+
+  .heading-xl {
+    @apply font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tightest text-ink leading-[1.05];
+  }
+
+  .heading-lg {
+    @apply font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-ink leading-[1.15];
+  }
+
+  .heading-md {
+    @apply font-display text-xl sm:text-2xl font-bold text-ink;
+  }
+
+  .lead {
+    @apply text-lg leading-relaxed text-ink-muted;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-rose text-white hover:bg-brand-rose-dark;
+    box-shadow: 0 8px 20px -8px rgba(167, 0, 42, 0.55);
+  }
+
+  .btn-dark {
+    @apply btn bg-brand-navy text-white hover:bg-brand-navy-700;
+  }
+
+  .btn-outline {
+    @apply btn border border-line bg-white text-ink hover:border-ink;
+  }
+
+  .btn-light {
+    @apply btn bg-white text-brand-navy hover:bg-brand-light;
+  }
+
+  .btn-ghost-light {
+    @apply btn border border-white/25 text-white hover:bg-white/10;
+  }
+
+  /* Surfaces */
+  .card {
+    @apply bg-white border border-line rounded-2xl shadow-soft;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:border-transparent;
+  }
+
+  .icon-tile {
+    @apply inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-rose-light text-brand-rose;
+  }
+
+  /* Forms */
+  .input {
+    @apply w-full rounded-lg border border-line bg-white px-4 py-3 text-ink placeholder:text-ink-subtle transition focus:outline-none focus:border-brand-rose focus:ring-4 focus:ring-brand-rose/10;
+  }
+
+  .label {
+    @apply block mb-1.5 text-sm font-medium text-ink;
+  }
+
+  /* Legal / long-form content */
+  .prose-legal h2 {
+    @apply font-display text-xl sm:text-2xl font-bold text-ink mt-12 mb-4 scroll-mt-28;
+  }
+
+  .prose-legal h3 {
+    @apply font-semibold text-ink mt-6 mb-2;
+  }
+
+  .prose-legal p {
+    @apply mb-4 leading-relaxed;
+  }
+
+  .prose-legal ul {
+    @apply list-disc pl-6 space-y-2 mb-4;
+  }
+
+  .prose-legal strong {
+    @apply text-ink font-semibold;
+  }
+
+  .prose-legal a {
+    @apply text-brand-rose font-medium hover:underline;
+  }
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgba(14, 16, 36, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(14, 16, 36, 0.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .bg-grid-light {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .mask-fade-b {
+    mask-image: linear-gradient(to bottom, black 40%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

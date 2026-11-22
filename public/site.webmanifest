@@ -1,10 +1,10 @@
 {
-  "name": "Nexora Creative Solutions",
+  "name": "Nexora Creative Solutions Ltd",
   "short_name": "Nexora",
-  "description": "Top-rated Tech Agency in Kenya specializing in Custom Mobile Apps, Responsive Web Design, and Digital Branding.",
+  "description": "Kenyan private limited technology company delivering custom mobile apps, responsive websites, software systems and digital branding.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F0F11",
+  "background_color": "#020230",
   "theme_color": "#A7002A",
   "icons": [
     {

@@ -1,15 +1,20 @@
 import React, { useState, useRef } from 'react';
-import { Phone, Mail, Clock, MapPin, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Phone, Mail, Clock, MapPin, Send, Loader2, CheckCircle, AlertCircle, Building2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import emailjs from '@emailjs/browser';
 import { submitContactMessage, fetchServices } from '../api';
-import picture from '../assets/pattern.png';
 import SEO from '../components/SEO';
 import ReCAPTCHA from "react-google-recaptcha";
 import toast from 'react-hot-toast';
+import PageHeader from '../components/ui/PageHeader';
+import { useCompany } from '../context/CompanyContext';
+
+const fadeUp = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+};
 
 const Contact = () => {
+  const { company: COMPANY, formatAddress } = useCompany();
   // 1. State for Form Data
   const [formData, setFormData] = useState({
     name: '',
@@ -19,7 +24,7 @@ const Contact = () => {
     message: ''
   });
 
-    const captchaRef = useRef(null);
+  const captchaRef = useRef(null);
 
   const [services, setServices] = useState([]);
   // 2. State for Submission Status
@@ -37,336 +42,328 @@ const Contact = () => {
   };
 
   // 4. Handle Form Submission
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if(!formData.name || !formData.email || !formData.message) {
+    if (!formData.name || !formData.email || !formData.message) {
       toast.error("Please fill in all required fields.");
       return;
-  }
+    }
 
-    // CHECK CAPTCHA: Ensure window.grecaptcha exists and has a response
-const token = captchaRef.current.getValue();
-if (!token) {
-    toast.error("Please verify that you are not a robot 🤖");
-    return;
-}
+    // CHECK CAPTCHA
+    const token = captchaRef.current.getValue();
+    if (!token) {
+      toast.error("Please verify that you are not a robot 🤖");
+      return;
+    }
 
-  setStatus('loading');
+    setStatus('loading');
 
-  try {
-    // 1. Save to Backend API
-    await submitContactMessage(formData);
+    try {
+      // Save to Backend API (also dispatches Zoho SMTP notifications)
+      await submitContactMessage({
+        ...formData,
+        source: 'Contact Page',
+      });
 
-    // 2. EmailJS Configuration
-        const serviceID = import.meta.env.VITE_EMAILJS_SERVICE_ID; 
-        const templateID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID; 
-        const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      setStatus('success');
+      toast.success("Message sent successfully! We'll be in touch.");
+      setFormData({ name: '', email: '', phone: '', service: 'Select Service', message: '' });
+      captchaRef.current.reset();
+      setTimeout(() => setStatus('idle'), 5000);
 
-    // --- EMAIL 1: Notification to YOU (Admin) ---
-    const adminMessage = `
-      You have a new inquiry!
-      
-      Name: ${formData.name}
-      Email: ${formData.email}
-      Phone: ${formData.phone}
-      Service: ${formData.service}
-      
-      Message:
-      ${formData.message}
-    `;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setStatus('error');
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
 
-    const adminParams = {
-      to_email: "info@nexoracreatives.co.ke", // Send to your business email
-      from_name: "Nexora Website System",
-      reply_to: formData.email, // So you can reply to the client
-      subject: `New Message from ${formData.name} - ${formData.service}`,
-      message_body: adminMessage
-    };
+  const contactItems = [
+    { icon: <MapPin size={20} />, label: "Office", text: formatAddress() },
+    { icon: <Phone size={20} />, label: "Phone", text: COMPANY.phone, href: COMPANY.phoneHref },
+    { icon: <Mail size={20} />, label: "Email", text: COMPANY.email, href: `mailto:${COMPANY.email}` },
+    { icon: <Clock size={20} />, label: "Business hours", text: COMPANY.hours },
+  ];
 
-    // --- EMAIL 2: Auto-Reply to CLIENT ---
-    const clientMessage = `
-      Hi ${formData.name},
-
-      Thank you for contacting Nexora Creative Solutions! 
-
-      We have received your message regarding "${formData.service}" and our team is reviewing it. We usually reply within 24 hours.
-
-      In the meantime, feel free to browse on our website.
-
-      Best Regards,
-      Newton Mwangi
-      CEO, Nexora Creative Solutions
-      www.nexoracreatives.co.ke
-    `;
-
-    const clientParams = {
-      to_email: formData.email, // Send to the client
-      from_name: "Nexora Creative Solutions",
-      reply_to: "info@nexoracreatives.co.ke", // So they can reply to you
-      subject: "We received your message! - Nexora",
-      message_body: clientMessage
-    };
-
-    // 3. Send Both Emails using the SAME Template
-    await Promise.all([
-      emailjs.send(serviceID, templateID, adminParams, publicKey),
-      emailjs.send(serviceID, templateID, clientParams, publicKey)
-    ]);
-
-    // 4. Success State
-    setStatus('success');
-    toast.success("Message sent successfully! We'll be in touch.");
-    setFormData({ name: '', email: '', phone: '', service: 'Select Service', message: '' });
-    captchaRef.current.reset();
-    setTimeout(() => setStatus('idle'), 5000);
-
-  } catch (error) {
-    console.error("Error sending message:", error);
-    setStatus('error');
-    toast.error("Something went wrong. Please try again.");
-  }
-};
+  const submitClass =
+    status === 'success'
+      ? 'btn w-full py-4 bg-green-600 text-white cursor-default'
+      : status === 'error'
+        ? 'btn w-full py-4 bg-red-600 text-white hover:bg-red-700'
+        : 'btn-primary w-full py-4';
 
   return (
-    <div className="pt-20">
-        <SEO 
-          title="Contact Us | Free Consultation & Quote | Nexora Creative Solutions"
-          description="Ready to start your digital project? Contact Nexora Creative Solutions in Thika & Nairobi. Call +254 115 332 870 or email info@nexoracreatives.co.ke."
-          url="/contact"
-          image="/ncs.png"
-          keywords={[
-            "contact Nexora",
-            "hire developers Kenya",
-            "web design quote Nairobi",
-            "app development consultation Thika"
-          ]}
-          breadcrumbs={[
-            { name: "Home", item: "/" },
-            { name: "Contact Us", item: "/contact" }
-          ]}
-          schema={{
-            "@context": "https://schema.org",
-            "@type": "ContactPage",
-            "name": "Contact Nexora Creative Solutions",
-            "description": "Get in touch with Nexora Creative Solutions for software development inquiries and project quotes.",
-            "url": "https://nexoracreatives.co.ke/contact",
-            "mainEntity": {
-              "@type": "ProfessionalService",
-              "name": "Nexora Creative Solutions",
-              "telephone": "+254 115 332 870",
-              "email": "info@nexoracreatives.co.ke",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Thika",
-                "addressRegion": "Kiambu",
-                "addressCountry": "KE"
-              }
+    <div>
+      <SEO
+        title="Contact Us | Free Consultation & Quote | Nexora Creative Solutions"
+        description="Ready to start your digital project? Contact Nexora Creative Solutions in Thika & Nairobi. Call +254 115 332 870 or email info@nexoracreatives.co.ke."
+        url="/contact"
+        image="/ncs.png"
+        keywords={[
+          "contact Nexora",
+          "hire developers Kenya",
+          "web design quote Nairobi",
+          "app development consultation Thika"
+        ]}
+        breadcrumbs={[
+          { name: "Home", item: "/" },
+          { name: "Contact Us", item: "/contact" }
+        ]}
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "ContactPage",
+          "name": "Contact Nexora Creative Solutions",
+          "description": "Get in touch with Nexora Creative Solutions for software development inquiries and project quotes.",
+          "url": "https://nexoracreatives.co.ke/contact",
+          "mainEntity": {
+            "@type": "ProfessionalService",
+            "name": "Nexora Creative Solutions",
+            "legalName": COMPANY.legalName,
+            "telephone": "+254 115 332 870",
+            "email": "info@nexoracreatives.co.ke",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Thika",
+              "addressRegion": "Kiambu",
+              "addressCountry": "KE"
             }
-          }}
-        />
-      
-      {/* 1. Header Section */}
-      <section className="relative py-24 text-center text-white overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src={picture} alt="Background" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-brand-charcoal/55"></div>
-        </div>
-        <div className="relative z-10 max-w-4xl mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 font-creative">Contact Us</h1>
-          <div className="flex justify-center gap-2 text-gray-300 text-sm font-medium">
-            <Link to="/" className="hover:text-white transition-colors">Home</Link> / 
-            <span className="text-brand-rose">Contact Us</span>
-          </div>
-        </div>
-      </section>
+          }
+        }}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 py-20">
-        <div className="grid lg:grid-cols-3 gap-10">
-          
-          {/* 2. Contact Info Card */}
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="lg:col-span-1 bg-brand-charcoal text-white p-10 rounded-3xl relative overflow-hidden shadow-2xl"
-          >
-            <div className="relative z-10">
-              <h3 className="text-3xl font-bold mb-8">Contact Info</h3>
-              <p className="text-gray-300 mb-8">Fill up the form and our Team will get back to you within 24 hours.</p>
-              
-              <div className="space-y-8">
-                {[
-                  { icon: <MapPin size={24}/>, label: "Address", text: "Thika, Kiambu, Kenya" },
-                  { icon: <Phone size={24}/>, label: "Phone", text: "+254 115 332 870" },
-                  { icon: <Mail size={24}/>, label: "Email", text: "info@nexoracreatives.co.ke" },
-                  { icon: <Clock size={24}/>, label: "Open Time", text: "Mon - Sat: 07:00 - 19:00" }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-4 group cursor-default">
-                    <div className="text-brand-rose group-hover:scale-110 transition-transform">{item.icon}</div>
-                    <div>
-                      <span className="font-bold text-gray-400 text-sm uppercase tracking-wider">{item.label}</span>
-                      <p className="text-white font-medium text-lg">{item.text}</p>
-                    </div>
-                  </div>
-                ))}
+      <PageHeader
+        eyebrow="Contact"
+        title="Let’s talk about your project"
+        description="Tell us what you’re building. Our team reviews every enquiry and responds within one business day."
+        breadcrumbs={[{ label: 'Contact Us' }]}
+      />
+
+      <section className="section bg-white">
+        <div className="container-site">
+          <div className="grid gap-8 lg:grid-cols-3 lg:gap-10">
+
+            {/* Contact Info + Company details */}
+            <motion.aside
+              {...fadeUp}
+              transition={{ duration: 0.5 }}
+              className="space-y-6 lg:col-span-1"
+            >
+              <div className="card p-7 md:p-8">
+                <span className="eyebrow">Get in touch</span>
+                <h2 className="heading-md mt-3">Contact information</h2>
+                <p className="mt-2 text-sm text-ink-muted">
+                  Fill in the form and our team will get back to you within 24 hours.
+                </p>
+
+                <ul className="mt-7 space-y-5">
+                  {contactItems.map((item) => (
+                    <li key={item.label} className="flex items-start gap-4">
+                      <span className="icon-tile w-10 h-10 shrink-0">{item.icon}</span>
+                      <div className="min-w-0">
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-ink-subtle">{item.label}</span>
+                        {item.href ? (
+                          <a href={item.href} className="block break-words font-medium text-ink hover:text-brand-rose transition-colors">
+                            {item.text}
+                          </a>
+                        ) : (
+                          <p className="font-medium text-ink">{item.text}</p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-            
-            {/* Decorations */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-brand-rose rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-brand-rose rounded-full blur-3xl opacity-20 -ml-10 -mb-10"></div>
-          </motion.div>
 
-          {/* 3. Contact Form */}
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-2 bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-gray-100"
-          >
-            <h2 className="text-3xl font-bold text-brand-charcoal mb-2">Get Your <span className="text-brand-rose">Free Quote</span> Today</h2>
-            <p className="text-gray-500 mb-10">Fill out the form below and we will get back to you shortly.</p>
-            
-            <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
-                
-                {/* Name Input */}
-                <motion.div whileFocus={{ scale: 1.02 }}>
-                   <input 
-                     type="text" 
-                     name="name"
-                     value={formData.name}
-                     onChange={handleChange}
-                     placeholder="Your Name *" 
-                     required
-                     className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-rose focus:ring-2 focus:ring-brand-rose/20 transition-all" 
-                   />
-                </motion.div>
+              {/* Company details */}
+              <div className="rounded-2xl bg-brand-navy p-7 md:p-8 text-white">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white">
+                    <Building2 size={20} />
+                  </span>
+                  <h3 className="font-display text-lg font-bold text-white">Company details</h3>
+                </div>
+                <dl className="mt-6 space-y-4 text-sm">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-white/50">Legal name</dt>
+                    <dd className="mt-0.5 font-medium text-white">{COMPANY.legalName}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-white/50">Entity type</dt>
+                    <dd className="mt-0.5 text-white/80">Private limited company incorporated in Kenya</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-white/50">Registered office</dt>
+                    <dd className="mt-0.5 text-white/80">{formatAddress()}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-white/50">Email</dt>
+                    <dd className="mt-0.5">
+                      <a href={`mailto:${COMPANY.email}`} className="break-words text-white/80 hover:text-white transition-colors">{COMPANY.email}</a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-white/50">Phone</dt>
+                    <dd className="mt-0.5">
+                      <a href={COMPANY.phoneHref} className="text-white/80 hover:text-white transition-colors">{COMPANY.phone}</a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-white/50">Hours</dt>
+                    <dd className="mt-0.5 text-white/80">{COMPANY.hours}</dd>
+                  </div>
+                </dl>
+              </div>
+            </motion.aside>
 
-                {/* Email Input */}
-                <motion.div whileFocus={{ scale: 1.02 }}>
-                   <input 
-                     type="email" 
-                     name="email"
-                     value={formData.email}
-                     onChange={handleChange}
-                     placeholder="Email Address *" 
-                     required
-                     className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-rose focus:ring-2 focus:ring-brand-rose/20 transition-all" 
-                   />
-                </motion.div>
+            {/* Contact Form */}
+            <motion.div
+              {...fadeUp}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="card p-6 sm:p-8 md:p-10 lg:col-span-2"
+            >
+              <span className="eyebrow">Free quote</span>
+              <h2 className="heading-lg mt-3">Request a free quote</h2>
+              <p className="mt-3 text-ink-muted">Fill out the form below and we will get back to you shortly.</p>
 
-                {/* Phone Input */}
-                <motion.div whileFocus={{ scale: 1.02 }}>
-                   <input 
-                     type="tel" 
-                     name="phone"
-                     value={formData.phone}
-                     onChange={handleChange}
-                     placeholder="Phone Number *" 
-                     required
-                     className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-rose focus:ring-2 focus:ring-brand-rose/20 transition-all" 
-                   />
-                </motion.div>
-              
-                {/* Service Selection */}
-                <motion.div whileFocus={{ scale: 1.02 }}>
-                  <select 
+              <form onSubmit={handleSubmit} className="mt-8 grid gap-5 md:grid-cols-2">
+
+                <div>
+                  <label htmlFor="contact-name" className="label">Full name *</label>
+                  <input
+                    id="contact-name"
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Jane Doe"
+                    required
+                    className="input"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="contact-email" className="label">Email address *</label>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="jane@company.com"
+                    required
+                    className="input"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="contact-phone" className="label">Phone number *</label>
+                  <input
+                    id="contact-phone"
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+254 7XX XXX XXX"
+                    required
+                    className="input"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="contact-service" className="label">Service</label>
+                  <select
+                    id="contact-service"
                     name="service"
                     value={formData.service}
                     onChange={handleChange}
-                    className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-rose focus:ring-2 focus:ring-brand-rose/20 transition-all text-gray-500"
+                    className="input"
                   >
                     <option disabled>Select Service</option>
                     {services.map(s => (
-                        <option key={s.id} value={s.title}>{s.title}</option>
+                      <option key={s.id} value={s.title}>{s.title}</option>
                     ))}
                     <option value="Other">Other</option>
                   </select>
-                </motion.div>
-              
-                {/* Message Area */}
-                <motion.div className="md:col-span-2" whileFocus={{ scale: 1.01 }}>
-                  <textarea 
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="contact-message" className="label">Message *</label>
+                  <textarea
+                    id="contact-message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    placeholder="Your Message *" 
-                    rows="4" 
+                    placeholder="Tell us about your goals, timeline and budget."
+                    rows="5"
                     required
-                    className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-brand-rose focus:ring-2 focus:ring-brand-rose/20 transition-all"
+                    className="input resize-y"
                   ></textarea>
-                </motion.div>
-
-                <div className="flex justify-center mb-4">
-    <ReCAPTCHA
-        ref={captchaRef}
-        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-    />
-</div>
-              
-                {/* Submit Button */}
-                <div className="md:col-span-2">
-                    <motion.button 
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        disabled={status === 'loading' || status === 'success'}
-                        className={`w-full font-bold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-colors ${
-                            status === 'success' 
-                            ? 'bg-green-500 text-white cursor-default' 
-                            : status === 'error'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-brand-rose text-white hover:bg-brand-charcoal'
-                        }`}
-                    >
-                        {status === 'loading' ? (
-                            <><Loader2 className="animate-spin" /> Sending...</>
-                        ) : status === 'success' ? (
-                            <><CheckCircle /> Message Sent!</>
-                        ) : status === 'error' ? (
-                            <><AlertCircle /> Failed. Try Again.</>
-                        ) : (
-                            <>Send Message <Send size={20} /></>
-                        )}
-                    </motion.button>
-                    {status === 'success' && (
-                        <p className="text-green-600 text-center mt-3 text-sm">We've received your message and will contact you soon!</p>
-                    )}
                 </div>
-            </form>
+
+                <div className="md:col-span-2 overflow-x-auto">
+                  <ReCAPTCHA
+                    ref={captchaRef}
+                    sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <button
+                    type="submit"
+                    disabled={status === 'loading' || status === 'success'}
+                    className={submitClass}
+                  >
+                    {status === 'loading' ? (
+                      <><Loader2 size={18} className="animate-spin" /> Sending...</>
+                    ) : status === 'success' ? (
+                      <><CheckCircle size={18} /> Message Sent!</>
+                    ) : status === 'error' ? (
+                      <><AlertCircle size={18} /> Failed. Try Again.</>
+                    ) : (
+                      <>Send Message <Send size={16} /></>
+                    )}
+                  </button>
+                  {status === 'success' && (
+                    <p className="mt-3 text-center text-sm text-green-700">We've received your message and will contact you soon!</p>
+                  )}
+                  <p className="mt-4 text-xs text-ink-subtle">
+                    By submitting this form you agree to {COMPANY.legalName} processing your details to respond to your enquiry.
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+
+          {/* Map Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="relative mt-12 md:mt-16 h-[320px] md:h-[420px] overflow-hidden rounded-2xl border border-line bg-brand-light shadow-soft"
+          >
+            <iframe
+              title={`${COMPANY.brandName} location map`}
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127672.27596009852!2d37.00844788358245!3d-1.040711132231267!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4e5b27c66117%3A0xb6f8a7e126152c26!2sThika!5e0!3m2!1sen!2ske!4v1709210000000!5m2!1sen!2ske"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="grayscale hover:grayscale-0 transition-all duration-700"
+            ></iframe>
+
+            <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="relative">
+                <div className="absolute w-4 h-4 rounded-full bg-brand-rose animate-ping"></div>
+                <div className="w-4 h-4 rounded-full border-2 border-white bg-brand-rose shadow-lg"></div>
+              </div>
+            </div>
           </motion.div>
         </div>
-
-        {/* 4. Map Section */}
-<motion.div 
-  initial={{ opacity: 0, y: 50 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true }}
-  transition={{ duration: 0.8 }}
-  className="mt-20 rounded-3xl overflow-hidden shadow-2xl border border-gray-200 h-[400px] relative bg-gray-100"
->
-  {/* Live Map of Thika */}
-  <iframe 
-    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127672.27596009852!2d37.00844788358245!3d-1.040711132231267!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4e5b27c66117%3A0xb6f8a7e126152c26!2sThika!5e0!3m2!1sen!2ske!4v1709210000000!5m2!1sen!2ske"
-    width="100%" 
-    height="100%" 
-    style={{ border: 0 }} 
-    allowFullScreen="" 
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-    className="grayscale hover:grayscale-0 transition-all duration-700"
-  ></iframe>
-  
-  {/* Ping Animation - Keeps it centered on the map */}
-  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-     <div className="relative">
-        <div className="w-4 h-4 bg-brand-rose rounded-full animate-ping absolute"></div>
-        <div className="w-4 h-4 bg-brand-rose rounded-full border-2 border-white shadow-lg"></div>
-     </div>
-  </div>
-</motion.div>
-
-      </div>
+      </section>
     </div>
   );
 };

@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { fetchServices, fetchStats, fetchTestimonials, fetchBenefits } from '../api';
-import { ArrowRight, CheckCircle, Loader2, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import picture from '../assets/pattern.png';
+import { motion } from 'framer-motion';
+import { ArrowRight, ArrowUpRight, Check, Star, Building2, Compass, PenTool, Code2, Rocket, Quote } from 'lucide-react';
+import { fetchServices, fetchStats, fetchTestimonials, fetchBenefits, resolveMediaUrl } from '../api';
 import SEO from '../components/SEO';
 import LucideIcon from '../components/LucideIcon';
+import SectionHeading from '../components/ui/SectionHeading';
+import CTASection from '../components/ui/CTASection';
+import { useCompany } from '../context/CompanyContext';
+import { PHOTOS } from '../config/photos';
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
 };
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } };
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2
-    }
-  }
-};
+const fallbackServices = [
+  { id: 'web', icon: 'Globe', title: 'Web Platforms', description: 'High-performance websites and web applications built for speed, SEO and conversion.' },
+  { id: 'mobile', icon: 'Smartphone', title: 'Mobile Apps', description: 'Cross-platform iOS and Android apps with native-grade performance and polish.' },
+  { id: 'software', icon: 'Cpu', title: 'Custom Software', description: 'Business systems, integrations and payment pipelines engineered around your operations.' },
+];
+
+const process = [
+  { icon: Compass, title: 'Discover', text: 'We map your goals, users and constraints into a clear, costed scope of work.' },
+  { icon: PenTool, title: 'Design', text: 'Wireframes and high-fidelity UI validated with you before a line of code ships.' },
+  { icon: Code2, title: 'Engineer', text: 'Agile sprints, weekly demos and production-grade code reviewed at every step.' },
+  { icon: Rocket, title: 'Launch & Scale', text: 'Deployment, monitoring and ongoing support as your product and team grow.' },
+];
+
+const techStack = ['React', 'Next.js', 'Flutter', 'Node.js', 'Django', 'PostgreSQL', 'Firebase', 'M-Pesa Daraja', 'AWS', 'Figma'];
 
 const Home = () => {
+  const { company: COMPANY, organizationSchema } = useCompany();
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -30,344 +40,208 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetchServices(), 
-      fetchStats(), 
-      fetchTestimonials(), 
-      fetchBenefits()
-    ])
+    Promise.all([fetchServices(), fetchStats(), fetchTestimonials(), fetchBenefits()])
       .then(([servicesRes, statsRes, testimonialsRes, benefitsRes]) => {
-        setServices(servicesRes.data);
-        setStats(statsRes.data);
-        setTestimonials(testimonialsRes.data);
-        setBenefits(benefitsRes.data);
-        setLoading(false);
+        setServices(servicesRes.data || []);
+        setStats(statsRes.data || []);
+        setTestimonials(testimonialsRes.data || []);
+        setBenefits(benefitsRes.data || []);
       })
-      .catch(err => {
-        console.error("Error fetching homepage data:", err);
-        setLoading(false);
-      });
+      .catch((err) => console.error('Error fetching homepage data:', err))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Fallback stats if backend is empty
+  const displayServices = services.length > 0 ? services : fallbackServices;
+
   const displayStats = stats.length > 0 ? stats : [
-    { value: "200+", label: "Systems Deployed" },
-    { value: "50+", label: "Enterprise Clients" },
-    { value: "10+", label: "Team Members" },
-    { value: "5+", label: "Years Experience" }
+    { value: '200+', label: 'Systems deployed' },
+    { value: '50+', label: 'Business clients' },
+    { value: '10+', label: 'Specialists' },
+    { value: '5+', label: 'Years of delivery' },
   ];
 
-  // Fallback benefits
   const displayBenefits = benefits.length > 0 ? benefits : [
-    { title: 'Expert Team Members', description: 'Highly skilled professionals dedicated to your success.' },
-    { title: '24/7 Support', description: 'We are always here to help you whenever you need us.' },
-    { title: 'Proven Track Record', description: 'Hundreds of successful projects and satisfied clients.' },
-    { title: 'Innovative Strategies', desc: 'Using the latest tech to stay ahead of the competition.' }
+    { title: 'Accountable, registered company', description: `Contract directly with ${COMPANY.legalName} - formal agreements, invoices and clear ownership of IP.` },
+    { title: 'Senior engineering team', description: 'Experienced designers and engineers who own outcomes, not just tickets.' },
+    { title: 'Transparent delivery', description: 'Fixed scopes, weekly demos and a single point of contact from kickoff to launch.' },
+    { title: 'Long-term support', description: 'Maintenance retainers, monitoring and responsive support after go-live.' },
   ];
 
-  // Fallback Testimonials
   const displayTestimonials = testimonials.length > 0 ? testimonials : [
-    { name: "Sarah Johnson", role: "CEO, TechStart", text: "Nexora transformed our digital presence completely. Their team is professional, creative, and incredibly skilled.", rating: 5 },
-    { name: "Michael Chen", role: "Founder, InnovateHQ", text: "The best tech agency we have worked with. Their attention to detail and engineering excellence is unmatched.", rating: 5 }
+    { name: 'Sarah Johnson', role: 'CEO', company: 'TechStart', text: 'Nexora transformed our digital presence completely. Their team is professional, creative, and incredibly skilled.', rating: 5 },
+    { name: 'Michael Chen', role: 'Founder', company: 'InnovateHQ', text: 'The best tech partner we have worked with. Their attention to detail and engineering excellence is unmatched.', rating: 5 },
   ];
 
   return (
-    <div className="pt-20 overflow-hidden">
-        <SEO 
-          title="Nexora Creative Solutions | Best Web Design & App Development in Kenya"
-          description="Nexora Creative Solutions is a top-rated tech agency in Thika & Nairobi, Kenya. We specialize in Custom Mobile Apps, Responsive Websites, UI/UX Design, and Digital Branding."
-          url="/"
-          image="/ncs.png"
-          keywords={[
-            "Nexora Creative Solutions",
-            "Nexora",
-            "Nexora Creatives",
-            "Web Design Kenya",
-            "App Development Nairobi",
-            "Software Development Kenya",
-            "Digital Agency Thika",
-            "UI UX Design Kenya",
-            "Custom Software Kenya"
-          ]}
-          schema={[
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "@id": "https://nexoracreatives.co.ke/#website",
-              "url": "https://nexoracreatives.co.ke/",
-              "name": "Nexora Creative Solutions",
-              "alternateName": ["Nexora", "Nexora Creatives", "NCS", "Nexora Creative Solutions Kenya"],
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": {
-                  "@type": "EntryPoint",
-                  "urlTemplate": "https://nexoracreatives.co.ke/blogs?search={search_term_string}"
-                },
-                "query-input": "required name=search_term_string"
-              }
+    <div className="overflow-hidden">
+      <SEO
+        title={`${COMPANY.brandName} | Web, App & Software Development Company in Kenya`}
+        description={`${COMPANY.legalName} is a Kenyan technology company in Thika & Nairobi delivering custom software, web and mobile applications, UI/UX design and digital branding.`}
+        url="/"
+        image="/ncs.png"
+        keywords={[
+          'Nexora Creative Solutions', 'Nexora Creative Solutions Ltd', 'Nexora', 'Nexora Creatives',
+          'Web Design Kenya', 'App Development Nairobi', 'Software Development Company Kenya',
+          'Digital Agency Thika', 'UI UX Design Kenya', 'Custom Software Kenya',
+        ]}
+        schema={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            '@id': `${COMPANY.siteUrl}/#website`,
+            url: `${COMPANY.siteUrl}/`,
+            name: COMPANY.brandName,
+            alternateName: ['Nexora', 'Nexora Creatives', 'NCS', COMPANY.legalName],
+            publisher: { '@id': `${COMPANY.siteUrl}/#organization` },
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: { '@type': 'EntryPoint', urlTemplate: `${COMPANY.siteUrl}/blogs?search={search_term_string}` },
+              'query-input': 'required name=search_term_string',
             },
-            {
-              "@context": "https://schema.org",
-              "@type": "ItemList",
-              "@id": "https://nexoracreatives.co.ke/#sitelinks",
-              "name": "Main Sitelinks",
-              "description": "Primary navigation links for Nexora Creative Solutions",
-              "itemListElement": [
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 1,
-                  "name": "Services",
-                  "description": "Custom Software, Web & Mobile App Development Services",
-                  "url": "https://nexoracreatives.co.ke/services"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 2,
-                  "name": "Projects",
-                  "description": "Our Portfolio of Deployed Software, Apps, and Digital Solutions",
-                  "url": "https://nexoracreatives.co.ke/projects"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 3,
-                  "name": "Pricing",
-                  "description": "Transparent and Affordable Web & App Development Pricing Packages",
-                  "url": "https://nexoracreatives.co.ke/pricing"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 4,
-                  "name": "Store",
-                  "description": "Official Nexora Developer Merch, Hoodies, and Swag",
-                  "url": "https://nexoracreatives.co.ke/shop"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 5,
-                  "name": "Blogs",
-                  "description": "Tech Insights, Tutorials, and Software Engineering Articles",
-                  "url": "https://nexoracreatives.co.ke/blogs"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 6,
-                  "name": "About Us",
-                  "description": "Learn about Nexora's mission, values, and team",
-                  "url": "https://nexoracreatives.co.ke/about"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 7,
-                  "name": "Contact",
-                  "description": "Get in touch with our team for quotes, consultations, and support",
-                  "url": "https://nexoracreatives.co.ke/contact"
-                },
-                {
-                  "@type": "SiteNavigationElement",
-                  "position": 8,
-                  "name": "Careers",
-                  "description": "Join our innovative engineering and creative design team",
-                  "url": "https://nexoracreatives.co.ke/careers"
-                }
-              ]
-            },
-            {
-              "@context": "https://schema.org",
-              "@type": "ProfessionalService",
-              "@id": "https://nexoracreatives.co.ke/#organization",
-              "name": "Nexora Creative Solutions",
-              "alternateName": "Nexora Creatives",
-              "url": "https://nexoracreatives.co.ke/",
-              "logo": "https://nexoracreatives.co.ke/ncs.png",
-              "image": "https://nexoracreatives.co.ke/ncs.png",
-              "description": "Premier tech agency in Kenya specializing in Custom Mobile Apps, Responsive Web Design, UI/UX Design, and Digital Transformation.",
-              "telephone": "+254 115 332 870",
-              "email": "info@nexoracreatives.co.ke",
-              "priceRange": "$$",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Thika",
-                "addressRegion": "Kiambu",
-                "addressCountry": "KE"
-              },
-              "sameAs": [
-                "https://facebook.com/profile.php?id=100083433616499",
-                "https://x.com/newtondesigns_",
-                "https://instagram.com/nexoracreatives_ke",
-                "https://linkedin.com/in/newton-mwangi-9732142a1"
-              ]
-            }
-          ]}
-        />
-     {/* Hero Section - Fun & Creative Style */}
-      <section className="relative h-[700px] flex items-center justify-center text-center text-white overflow-hidden font-creative">
-        
-        {/* Background Image Layer */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={picture}
-            alt="Hero Background" 
-            className="w-full h-full object-cover"
-          />
-          {/* Dark Overlay with Dull Transparency (85% Opacity for better text contrast) */}
-          <div className="absolute inset-0 bg-brand-charcoal/40 backdrop-blur-sm"></div>
-        </div>
+          },
+          organizationSchema(),
+        ]}
+      />
 
-        {/* Animated Blob - Moves behind text but over the dark overlay */}
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-rose/20 rounded-full blur-[100px] z-0"
-        />
+      {/* ───────────────── Hero ───────────────── */}
+      <section className="relative pt-32 md:pt-40 pb-20 md:pb-28 bg-white">
+        <div className="absolute inset-0 bg-grid mask-fade-b" aria-hidden="true" />
+        <div className="absolute top-20 -right-40 w-[560px] h-[560px] rounded-full bg-brand-rose/10 blur-[120px]" aria-hidden="true" />
 
-        {/* Content Layer (Centered & In Front) */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4">
-          <motion.div 
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-          >
-        
-            
-            <motion.h1 
-              variants={fadeInUp} 
-              className="text-6xl md:text-6xl font-black mb-8 leading-tight text-white tracking-tight"
-            >
-              We Create Media With <br />
-              <span className="text-brand-rose inline-block relative px-2">
-                Cutting-Edge
-                {/* Squiggly Line for fun effect */}
-                <motion.svg 
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.5, delay: 1 }}
-                  className="absolute -bottom-4 left-0 w-full h-4 text-white" viewBox="0 0 100 10" preserveAspectRatio="none">
-                  <path d="M0 5 Q 25 10, 50 5 T 100 5" stroke="currentColor" strokeWidth="4" fill="none"/>
-                </motion.svg>
-              </span> Technology
+        <div className="relative container-site grid lg:grid-cols-[1.1fr_1fr] gap-14 lg:gap-16 items-center">
+          <motion.div initial="hidden" animate="visible" variants={stagger}>
+
+
+            <motion.h1 variants={fadeUp} className="heading-xl mt-8">
+              Digital products, <br className="hidden sm:block" />
+              engineered for <span className="text-brand-rose">ambitious</span> businesses.
             </motion.h1>
-            
-            <motion.p variants={fadeInUp} className="text-lg text-gray-200 mb-12 leading-relaxed max-w-2xl mx-auto font-light">
-              We deliver innovative digital solutions that drive growth, efficiency, and scalable results for your business.
+
+            <motion.p variants={fadeUp} className="lead mt-6 max-w-xl">
+              We partner with organisations across Kenya and beyond to design, build and scale websites, mobile apps and custom software that drive measurable growth.
             </motion.p>
-            
-            {/* Buttons with Navigation */}
-            <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4">
-              
-              {/* Get Started -> Services */}
-              <Link to="/services">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-brand-rose px-8 py-3 rounded-full font-bold text-white hover:bg-white hover:text-brand-rose transition-all shadow-[0_10px_20px_rgba(167,0,42,0.3)] flex items-center gap-2"
-                >
-                  Get Started <ArrowRight size={20} />
-                </motion.button>
-              </Link>
 
-              {/* Learn More -> About Us */}
-              <Link to="/about">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-white/10 border border-white/30 backdrop-blur-md text-white px-8 py-3 rounded-full font-bold hover:bg-white hover:text-brand-charcoal transition-all"
-                >
-                  Learn More
-                </motion.button>
+            <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-3">
+              <Link to="/contact" className="btn-primary !px-7 !py-3.5">
+                Start a project <ArrowRight size={16} />
               </Link>
+              <Link to="/projects" className="btn-outline !px-7 !py-3.5">
+                See our work
+              </Link>
+            </motion.div>
 
+            <motion.ul variants={fadeUp} className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-ink-muted">
+              {['Registered Kenyan company', 'Fixed-scope proposals', 'Post-launch support'].map((t) => (
+                <li key={t} className="flex items-center gap-2">
+                  <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-brand-rose-light text-brand-rose">
+                    <Check size={12} strokeWidth={3} />
+                  </span>
+                  {t}
+                </li>
+              ))}
+            </motion.ul>
+          </motion.div>
+
+          {/* Visual */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
+            className="relative"
+          >
+            <div className="relative rounded-3xl overflow-hidden shadow-lift aspect-[4/5] sm:aspect-[5/5] lg:aspect-[4/5]">
+              <img
+                src={PHOTOS.homeHero}
+                alt="Nexora Creative Solutions Ltd designers and engineers mapping a product architecture"
+                className="w-full h-full object-cover object-top"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/70 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 text-white">
+                <p className="text-xs uppercase tracking-[0.18em] text-white/70">Thika · Nairobi · Remote</p>
+                <p className="mt-1 font-display text-xl font-semibold">Strategy, design & engineering under one roof.</p>
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              className="hidden sm:flex absolute -left-8 top-10 card px-5 py-4 items-center gap-4"
+            >
+              <span className="font-display text-3xl font-extrabold text-brand-rose">{displayStats[0]?.value}</span>
+              <span className="text-sm leading-tight text-ink-muted">{displayStats[0]?.label}</span>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.75, duration: 0.5 }}
+              className="hidden sm:block absolute -right-6 bottom-28 card px-5 py-4"
+            >
+              <div className="flex gap-0.5 text-amber-400">
+                {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+              </div>
+              <p className="mt-1 text-sm font-semibold text-ink">Rated 5.0 by clients</p>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-brand-charcoal text-white relative overflow-hidden">
-        
-        {/* --- Background Layers --- */}
-        
-        {/* Layer 1: Pattern Image */}
-        <div
-          className="absolute inset-0 z-0 opacity-50" // Subtle opacity
-          style={{
-            backgroundImage: `url(${picture})`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '300px auto', 
-            backgroundPosition: 'center'
-          }}
-        ></div>
-
-        {/* Layer 2: Dull Dark Overlay */}
-        <div className="absolute inset-0 z-0 bg-brand-charcoal/50"></div>
-
-
-        {/* --- Content (Wrapped in relative z-10) --- */}
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="flex flex-wrap justify-center md:justify-between gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-gray-700/50"
-          >
-            {displayStats.map((stat, idx) => (
-              <motion.div variants={fadeInUp} key={idx} className="flex-1 pt-8 md:pt-0 px-4">
-                <motion.h3 
-                  whileHover={{ scale: 1.2, color: "#fff" }}
-                  className="text-5xl font-extrabold text-brand-rose mb-2 cursor-default font-creative"
-                >
-                  {stat.value}
-                </motion.h3>
-                <p className="text-gray-300 font-medium text-lg">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
+      {/* ───────────────── Tech strip ───────────────── */}
+      <section className="border-y border-line bg-brand-light/60">
+        <div className="container-site py-8 flex flex-col md:flex-row md:items-center gap-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-subtle shrink-0">Built with</p>
+          <div className="relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+            <motion.div
+              className="flex gap-12 whitespace-nowrap w-max"
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+            >
+              {[...techStack, ...techStack].map((t, i) => (
+                <span key={i} className="font-display text-lg font-semibold text-ink/40">{t}</span>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Services Preview */}
-      <section className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16 max-w-2xl mx-auto"
-          >
-            <span className="text-brand-rose font-bold uppercase tracking-wider">Our Expertise</span>
-            <h2 className="text-4xl font-bold text-brand-charcoal mt-3 mb-4">Services We Provide</h2>
-          </motion.div>
-          
+      {/* ───────────────── Services ───────────────── */}
+      <section className="section bg-white">
+        <div className="container-site">
+          <SectionHeading
+            eyebrow="What we do"
+            title="End-to-end digital capability"
+            description="From first idea to production at scale - one accountable team for strategy, design and engineering."
+            action={<Link to="/services" className="btn-outline">All services <ArrowRight size={16} /></Link>}
+          />
+
           {loading ? (
-            <div className="flex justify-center p-20">
-              <Loader2 size={48} className="animate-spin text-brand-rose opacity-20" />
+            <div className="grid md:grid-cols-3 gap-6">
+              {[0, 1, 2].map((i) => <div key={i} className="card h-64 animate-pulse bg-brand-light" />)}
             </div>
           ) : (
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true }}
-              variants={staggerContainer}
-              className="grid md:grid-cols-3 gap-8"
+              viewport={{ once: true, margin: '-60px' }}
+              variants={stagger}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {services.slice(0, 3).map((service) => (
-                <motion.div 
-                  key={service.id} 
-                  variants={fadeInUp}
-                  whileHover={{ y: -10 }}
-                  className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group border border-gray-100"
-                >
-                  <motion.div 
-                    whileHover={{ rotate: 360, backgroundColor: "#03045E", color: "#fff" }}
-                    transition={{ duration: 0.6 }}
-                    className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-brand-rose mb-6 shadow-sm"
+              {displayServices.slice(0, 6).map((service, idx) => (
+                <motion.div key={service.id ?? idx} variants={fadeUp}>
+                  <Link
+                    to={services.length > 0 ? `/services/${service.id}` : '/services'}
+                    className="card-hover group flex h-full flex-col p-8"
                   >
-                    <LucideIcon name={service.icon} size={24} />
-                  </motion.div>
-                  <h3 className="text-xl font-bold mb-4 text-brand-charcoal">{service.title}</h3>
-                  <p className="text-gray-600 mb-8 leading-relaxed line-clamp-3">{service.description}</p>
-                  <Link to={`/services/${service.id}`} className="text-brand-rose font-bold flex items-center gap-2 hover:gap-4 transition-all">
-                    Read More <ArrowRight size={18}/>
+                    <div className="flex items-start justify-between">
+                      <span className="icon-tile"><LucideIcon name={service.icon} size={22} /></span>
+                      <span className="font-display text-sm font-semibold text-ink-subtle">0{idx + 1}</span>
+                    </div>
+                    <h3 className="heading-md mt-8">{service.title}</h3>
+                    <p className="mt-3 text-ink-muted leading-relaxed line-clamp-3 flex-1">{service.description}</p>
+                    <span className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-rose">
+                      Learn more <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </span>
                   </Link>
                 </motion.div>
               ))}
@@ -376,87 +250,161 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-24 bg-brand-charcoal text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-rose/5 rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
-          <span className="text-brand-rose font-bold uppercase tracking-wider text-sm">Client Success</span>
-          <h2 className="text-4xl font-bold mt-2 mb-16">Trusted by Enterprise Leaders</h2>
-
-          <div className="grid md:grid-cols-2 gap-8 text-left">
-            {displayTestimonials.map((item, idx) => (
+      {/* ───────────────── Stats band ───────────────── */}
+      <section className="relative bg-brand-navy text-white">
+        <div className="absolute inset-0 bg-grid-light" aria-hidden="true" />
+        <div className="relative container-site py-16 md:py-20">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-y-10"
+          >
+            {displayStats.slice(0, 4).map((stat, idx) => (
               <motion.div
                 key={idx}
-                whileHover={{ scale: 1.02 }}
-                className="bg-white/5 backdrop-blur-sm border border-white/10 p-10 rounded-3xl relative"
+                variants={fadeUp}
+                className={`px-6 ${idx % 2 === 1 ? 'border-l border-white/10' : ''} ${idx === 2 ? 'lg:border-l lg:border-white/10' : ''}`}
               >
-                <div className="flex gap-1 text-yellow-400 mb-6">
-                  {[...Array(item.rating || 5)].map((_, star) => <Star key={star} size={18} fill="currentColor" />)}
-                </div>
-                <p className="text-gray-300 text-lg italic mb-8 leading-relaxed">"{item.text}"</p>
-                <div className="flex items-center gap-4 border-t border-white/10 pt-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-rose to-purple-600 p-[2px]">
-                    <img 
-                        src={item.image || `https://randomuser.me/api/portraits/men/${idx + 45}.jpg`} 
-                        alt="Client" 
-                        className="w-full h-full rounded-full border-2 border-brand-charcoal object-cover" 
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white text-lg">{item.name}</h4>
-                    <p className="text-sm text-brand-rose">{item.role} {item.company ? `@ ${item.company}` : ''}</p>
-                  </div>
-                </div>
+                <p className="font-display text-4xl md:text-5xl font-extrabold tracking-tight">{stat.value}</p>
+                <p className="mt-2 text-sm text-white/60">{stat.label}</p>
               </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ───────────────── Process ───────────────── */}
+      <section className="section bg-white">
+        <div className="container-site">
+          <SectionHeading
+            align="center"
+            eyebrow="How we work"
+            title="A delivery process built on clarity"
+            description="Every engagement follows a proven, transparent framework so you always know what is happening and why."
+          />
+          <motion.ol
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={stagger}
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {process.map((step, idx) => {
+              const StepIcon = step.icon;
+              return (
+                <motion.li key={step.title} variants={fadeUp} className="relative card p-7">
+                  <span className="absolute top-7 right-7 font-display text-sm font-semibold text-ink-subtle">Step {idx + 1}</span>
+                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-navy text-white">
+                    <StepIcon size={20} />
+                  </span>
+                  <h3 className="mt-6 font-display text-lg font-bold text-ink">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed">{step.text}</p>
+                </motion.li>
+              );
+            })}
+          </motion.ol>
+        </div>
+      </section>
+
+      {/* ───────────────── Why Nexora ───────────────── */}
+      <section className="section bg-brand-light">
+        <div className="container-site grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative"
+          >
+            <img
+              src={PHOTOS.homeWhyNexora}
+              alt="Product leaders reviewing a client roadmap"
+              className="rounded-3xl shadow-lift w-full aspect-[5/4] object-cover"
+            />
+            <div className="absolute -bottom-8 left-8 right-8 sm:right-auto sm:max-w-xs card p-6">
+              <div className="flex items-center gap-3">
+                <span className="icon-tile !w-10 !h-10"><Building2 size={18} /></span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">{COMPANY.legalName}</p>
+                  <p className="text-xs text-ink-subtle">Private limited company · Kenya</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="pt-8 lg:pt-0">
+            <SectionHeading
+              className="!mb-10"
+              eyebrow="Why Nexora"
+              title="A partner you can hold accountable"
+              description="Our incorporation as a private limited company formalises what clients have always valued: structure, governance and long-term commitment."
+            />
+            <motion.ul
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={stagger}
+              className="grid sm:grid-cols-2 gap-x-8 gap-y-8"
+            >
+              {displayBenefits.slice(0, 4).map((item, idx) => (
+                <motion.li key={idx} variants={fadeUp}>
+                  <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-brand-rose text-white">
+                    <Check size={16} strokeWidth={3} />
+                  </span>
+                  <h3 className="mt-4 font-display text-base font-bold text-ink">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed">{item.description || item.desc}</p>
+                </motion.li>
+              ))}
+            </motion.ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────────── Testimonials ───────────────── */}
+      <section className="section bg-white">
+        <div className="container-site">
+          <SectionHeading
+            align="center"
+            eyebrow="Client voices"
+            title="Trusted by teams that ship"
+          />
+          <div className="grid md:grid-cols-2 gap-6">
+            {displayTestimonials.slice(0, 4).map((item, idx) => (
+              <motion.figure
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1, duration: 0.5 }}
+                className="card p-8 md:p-10 flex flex-col"
+              >
+                <Quote size={28} className="text-brand-rose/30" />
+                <blockquote className="mt-4 text-lg leading-relaxed text-ink flex-1">“{item.text}”</blockquote>
+                <figcaption className="mt-8 pt-6 border-t border-line flex items-center gap-4">
+                  {item.image ? (
+                    <img src={resolveMediaUrl(item.image)} alt={item.name} className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <span className="inline-flex w-12 h-12 items-center justify-center rounded-full bg-brand-navy text-white font-display font-bold">
+                      {item.name?.charAt(0)}
+                    </span>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-ink">{item.name}</p>
+                    <p className="text-sm text-ink-subtle">{[item.role, item.company].filter(Boolean).join(', ')}</p>
+                  </div>
+                  <div className="hidden sm:flex gap-0.5 text-amber-400">
+                    {[...Array(item.rating || 5)].map((_, s) => <Star key={s} size={14} fill="currentColor" />)}
+                  </div>
+                </figcaption>
+              </motion.figure>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-24 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="relative"
-          >
-             <div className="absolute top-0 left-0 w-full h-full bg-brand-rose rounded-2xl transform translate-x-4 translate-y-4 z-0"></div>
-            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80" alt="Team Meeting" className="rounded-2xl shadow-2xl relative z-10"/>
-          </motion.div>
-          
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.span variants={fadeInUp} className="text-brand-rose font-bold uppercase tracking-wider">Why Choose Us</motion.span>
-            <motion.h2 variants={fadeInUp} className="text-4xl font-bold mt-3 mb-6 text-brand-charcoal leading-tight">Why You Should Trust Nexora?</motion.h2>
-            
-            <div className="grid gap-6">
-              {displayBenefits.map((item, idx) => (
-                <motion.div 
-                  variants={fadeInUp}
-                  key={idx} 
-                  whileHover={{ scale: 1.02, backgroundColor: "#eff6ff" }}
-                  className="flex items-start gap-4 p-4 rounded-xl transition duration-300 cursor-pointer"
-                >
-                  <div className="bg-brand-charcoal/10 p-2 rounded-full shrink-0">
-                    <CheckCircle className="text-brand-charcoal w-6 h-6" />
-                  </div>
-                  <div>
-                      <h4 className="text-xl font-bold text-brand-charcoal mb-2">{item.title}</h4>
-                      <p className="text-gray-600">{item.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <CTASection />
     </div>
   );
 };

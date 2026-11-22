@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, ShieldCheck } from 'lucide-react';
+import { useCompany } from '../context/CompanyContext';
 
 const PrivacyNotice = () => {
+  const { company: COMPANY } = useCompany();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Check if user has already accepted
     const consent = localStorage.getItem('nexora_cookie_consent');
     if (!consent) {
-      // Show banner after 2 seconds delay for better UX
       const timer = setTimeout(() => setIsVisible(true), 2000);
       return () => clearTimeout(timer);
     }
@@ -23,40 +24,45 @@ const PrivacyNotice = () => {
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.div 
-          initial={{ y: 100, opacity: 0 }}
+        <motion.div
+          initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-4 left-4 right-4 md:left-8 md:right-auto md:max-w-md z-50"
+          exit={{ y: 40, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed bottom-4 left-4 right-4 md:left-6 md:right-auto md:max-w-md z-50"
         >
-          <div className="bg-brand-charcoal/95 backdrop-blur-md text-white p-6 rounded-2xl shadow-2xl border border-white/10 relative">
-            
-            {/* Close Icon (Optional decline) */}
-            <button 
-              onClick={() => setIsVisible(false)} 
-              className="absolute top-2 right-2 text-gray-400 hover:text-white"
+          <div className="rounded-2xl bg-brand-navy/95 backdrop-blur-xl text-white p-6 shadow-lift border border-white/10 relative">
+            <button
+              type="button"
+              aria-label="Dismiss cookie notice"
+              onClick={() => setIsVisible(false)}
+              className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
             >
               <X size={16} />
             </button>
 
-            <h4 className="font-bold text-lg mb-2 text-brand-rose">We value your privacy</h4>
-            <p className="text-gray-300 text-sm mb-4 leading-relaxed">
-              We use cookies to enhance your experience and secure our forms (reCAPTCHA). By continuing to visit this site you agree to our use of cookies.
+            <div className="flex items-center gap-2.5 mb-2">
+              <ShieldCheck size={18} className="text-brand-rose shrink-0" />
+              <h4 className="font-display font-bold text-base text-white">Your privacy matters</h4>
+            </div>
+            <p className="text-white/70 text-xs sm:text-sm mb-5 leading-relaxed">
+              {COMPANY.legalName} uses essential cookies and reCAPTCHA to secure forms and improve site performance.
             </p>
 
-            <div className="flex gap-3">
-              <button 
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
                 onClick={acceptCookies}
-                className="bg-brand-rose text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-white hover:text-brand-charcoal transition-all flex-grow"
+                className="btn-primary !py-2 !px-5 flex-1 text-xs"
               >
                 Accept
               </button>
-              <a 
-                href="/privacy" 
-                className="px-4 py-2 rounded-full text-sm font-bold border border-white/20 hover:bg-white/10 transition-colors text-center"
+              <Link
+                to="/privacy"
+                className="btn-ghost-light !py-2 !px-4 text-xs text-center"
               >
-                Learn More
-              </a>
+                Privacy Policy
+              </Link>
             </div>
           </div>
         </motion.div>

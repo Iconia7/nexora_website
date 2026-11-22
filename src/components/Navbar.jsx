@@ -1,103 +1,130 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, ShoppingBag } from 'lucide-react'; // ShoppingBag is already imported
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Menu, X, ShoppingBag, ArrowRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Logo from '../assets/NCS_Secondary_Logo.png';
+import { useCompany } from '../context/CompanyContext';
+
+const navLinks = [
+  { label: 'Home', to: '/' },
+  { label: 'About', to: '/about' },
+  { label: 'Services', to: '/services' },
+  { label: 'Projects', to: '/projects' },
+  { label: 'Pricing', to: '/pricing' },
+  { label: 'Insights', to: '/blogs' },
+];
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { company: COMPANY } = useCompany();
+  const [openPath, setOpenPath] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+  const { pathname } = useLocation();
+  const isOpen = openPath === pathname;
 
-  // Define menu items for cleaner mapping
-  const navLinks = ['Home', 'About', 'Services', 'Projects', 'Blogs', 'Pricing'];
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const toggleMenu = () => setOpenPath((prev) => (prev === pathname ? null : pathname));
+
+  const linkClass = ({ isActive }) =>
+    `relative px-3 py-2 text-sm font-medium transition-colors ${
+      isActive ? 'text-ink' : 'text-ink-muted hover:text-ink'
+    }`;
 
   return (
-    // BG is Charcoal, Text is White
-    <nav className="bg-brand-white text-brand-charcoal fixed w-full z-50 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20 items-center">
-          {/* Logo Section */}
-          <Link to="/" className="flex items-center">
-            <img 
-              src={Logo} 
-              alt="Nexora Creative Solutions" 
-              className="h-20 md:h-20 w-auto object-contain py-2" 
-            />
-          </Link>
-          
-          {/* Desktop Links */}
-          <div className="hidden md:flex space-x-8 items-center">
-            {navLinks.map((item) => (
-              <Link 
-                key={item} 
-                to={`/${item.toLowerCase() === 'home' ? '' : item.toLowerCase()}`} 
-                className="text-brand-charcoal hover:text-brand-rose transition-colors font-medium"
-              >
-                {item}
-              </Link>
-            ))}
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        scrolled || isOpen
+          ? 'bg-white/90 backdrop-blur-xl border-b border-line shadow-[0_1px_0_rgba(14,16,36,0.02)]'
+          : 'bg-white border-b border-transparent'
+      }`}
+    >
+      <nav className="container-site flex h-20 items-center justify-between" aria-label="Main">
+        <Link to="/" className="flex items-center shrink-0" aria-label={`${COMPANY.legalName} – Home`}>
+          <img src={Logo} alt={COMPANY.legalName} className="h-14 w-auto object-contain" />
+        </Link>
 
-            {/* --- NEW STORE LINK (Desktop) --- */}
-            <Link 
-              to="/shop" 
-              className="text-brand-charcoal hover:text-brand-rose transition-colors font-medium flex items-center gap-1"
-            >
-              <ShoppingBag size={18} />
-              <span>Store</span>
-            </Link>
-
-            {/* Quote Button */}
-            <Link 
-              to="/contact" 
-              className="bg-brand-rose px-6 py-2 rounded-full text-white font-medium hover:bg-white hover:text-brand-rose transition border border-brand-rose"
-            >
-              Get A Quote
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-brand-charcoal hover:text-brand-rose">
-              {isOpen ? <X /> : <Menu />}
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Mobile Dropdown */}
-      {isOpen && (
-        <div className="md:hidden bg-brand-charcoal border-t border-gray-700 pb-4 px-4">
-          {/* Standard Links */}
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((item) => (
-            <Link 
-              key={item} 
-              to={`/${item.toLowerCase() === 'home' ? '' : item.toLowerCase()}`} 
-              className="block py-3 text-white hover:text-brand-rose border-b border-gray-700" 
-              onClick={() => setIsOpen(false)}
-            >
-              {item}
-            </Link>
+            <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClass}>
+              {({ isActive }) => (
+                <>
+                  {item.label}
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      className="absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-brand-rose"
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
           ))}
+        </div>
 
-          {/* --- NEW STORE LINK (Mobile) --- */}
-          <Link 
-            to="/shop" 
-            className="flex items-center gap-2 py-3 text-white hover:text-brand-rose border-b border-gray-700" 
-            onClick={() => setIsOpen(false)}
+        <div className="hidden lg:flex items-center gap-3">
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
           >
-            <ShoppingBag size={18} />
-            Store
+            <ShoppingBag size={16} /> Store
           </Link>
-
-          {/* Mobile Quote Link */}
-          <Link 
-            to="/contact" 
-            className="block py-3 text-brand-rose font-bold" 
-            onClick={() => setIsOpen(false)}
-          >
-            Get A Quote
+          <Link to="/contact" className="btn-primary !py-2.5">
+            Start a project <ArrowRight size={16} />
           </Link>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile toggle */}
+        <button
+          onClick={toggleMenu}
+          className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg text-ink hover:bg-brand-light"
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={isOpen}
+        >
+          {isOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </nav>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="lg:hidden overflow-hidden bg-white border-t border-line"
+          >
+            <div className="container-site py-4">
+              {[...navLinks, { label: 'Team', to: '/team' }, { label: 'Careers', to: '/careers' }, { label: 'Store', to: '/shop' }].map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    `flex items-center justify-between py-3.5 border-b border-line text-base font-medium ${
+                      isActive ? 'text-brand-rose' : 'text-ink'
+                    }`
+                  }
+                >
+                  {item.label}
+                  <ArrowRight size={16} className="opacity-30" />
+                </NavLink>
+              ))}
+              <Link to="/contact" className="btn-primary w-full mt-5">
+                Start a project <ArrowRight size={16} />
+              </Link>
+              <p className="mt-4 text-center text-xs text-ink-subtle">{COMPANY.legalName}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
   );
 };
 

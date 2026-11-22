@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import PrivacyNotice from './components/PrivacyNotice';
 import WhatsAppButton from './components/WhatsAppButton';
 import AnalyticsTracker from './components/AnalyticsTracker';
+import { CompanyProvider } from './context/CompanyContext';
 import { Toaster } from 'react-hot-toast';
 
 
@@ -52,46 +53,48 @@ const ShopWrapper = () => {
 
 function App() {
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen">
-        <ConditionalLayout>
-          <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loader /></div>}>
-            <Routes>
-              {/* --- LIVE ROUTES --- */}
-              
-              {/* 1. Root is now the Real Home Page */}
-              <Route path="/" element={<Home />} />
-              
-              {/* 2. Main Pages */}
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/services/:id" element={<ServiceDetails />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/projects/:id" element={<ProjectDetails />} />
-              <Route path="/blogs" element={<Blogs />} />
-              <Route path="/blogs/:id" element={<BlogDetails />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/team/:id" element={<TeamDetails />} />
+    <CompanyProvider>
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <ConditionalLayout>
+            <Suspense fallback={<div className="h-screen flex items-center justify-center"><Loader /></div>}>
+              <Routes>
+                {/* --- LIVE ROUTES --- */}
+                
+                {/* 1. Root is now the Real Home Page */}
+                <Route path="/" element={<Home />} />
+                
+                {/* 2. Main Pages */}
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/services/:id" element={<ServiceDetails />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projects/:id" element={<ProjectDetails />} />
+                <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blogs/:id" element={<BlogDetails />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/team" element={<Team />} />
+                <Route path="/team/:id" element={<TeamDetails />} />
 
 
-              {/* --- 3. THE SHOP ROUTE --- */}
-              <Route path="/shop" element={<ShopWrapper />} />
+                {/* --- 3. THE SHOP ROUTE --- */}
+                <Route path="/shop" element={<ShopWrapper />} />
 
-              {/* 4. Legal */}
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<Terms />} />
-              
-              {/* 5. Utilities */}
-              <Route path="/coming-soon" element={<ComingSoon />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </ConditionalLayout>
-      </div>
-    </Router>
+                {/* 4. Legal */}
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<Terms />} />
+                
+                {/* 5. Utilities */}
+                <Route path="/coming-soon" element={<ComingSoon />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </ConditionalLayout>
+        </div>
+      </Router>
+    </CompanyProvider>
   );
 }
 
@@ -119,8 +122,10 @@ const ConditionalLayout = ({ children }) => {
           position="top-center"
           toastOptions={{
             style: {
-              background: '#333',
+              background: '#020230',
               color: '#fff',
+              borderRadius: '10px',
+              fontSize: '14px',
               zIndex: 9999,
             },
             success: {
